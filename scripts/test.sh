@@ -1,9 +1,9 @@
 #!/bin/bash
 
 START=`date +%s%N`
-ITER=5000
+ITER=1000
 for ((i=0;i<$ITER;i++)); do
-    echo "sssssaaaassssssssssfffffffffffffffddddddddddddddd" | nc 192.172.1.4 7000 > /dev/null &
+    echo "sssssaaaassssssssssfffffffffffffffddddddddddddddd" | nc 192.172.1.4 7000 -w 10&
 done
 wait
 END=`date +%s%N`

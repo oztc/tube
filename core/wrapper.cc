@@ -1,4 +1,5 @@
-#include "wrapper.h"
+#include "core/stages.h"
+#include "core/wrapper.h"
 
 namespace pipeserv {
 
@@ -38,11 +39,16 @@ Request::read_data(byte* ptr, size_t sz)
 
 Response::Response(Connection* conn, size_t buffer_size)
     : Wrapper(conn), buffer_size_(buffer_size), inactive_(false)
-{}
+{
+    poll_out_stage_ = Pipeline::instance().find_stage("poll_out");
+}
 
 Response::~Response()
 {
-    flush_data();
+    if (active()) {
+        conn_->hold = true; // hold the lock, so conn_->unlock won't unlock
+        poll_out_stage_->sched_add(conn_); // silently flush
+    }
 }
 
 ssize_t

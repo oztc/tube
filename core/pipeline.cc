@@ -8,29 +8,22 @@ namespace pipeserv {
 bool
 Connection::trylock()
 {
-    utils::RWMutex& pipe_mutex = Pipeline::instance().mutex();
-    if (!pipe_mutex.try_lock_shared()) {
-        return false;
-    }
-    bool ret = mutex.try_lock();
-    if (!ret) {
-        pipe_mutex.unlock_shared();
-    }
-    return ret;
+    bool locked = mutex.try_lock();
+    if (locked) hold = false;
+    return locked;
 }
 
 void
 Connection::lock()
 {
-    Pipeline::instance().mutex().lock_shared();
     mutex.lock();
+    hold = false;
 }
 
 void
 Connection::unlock()
 {
-    mutex.unlock();
-    Pipeline::instance().mutex().unlock_shared();
+    if (!hold) mutex.unlock();
 }
 
 Scheduler::Scheduler()
@@ -69,19 +62,23 @@ QueueScheduler::add_task(Connection* conn)
 
 class QueueSchedulerPickScope
 {
-    utils::Mutex& mutex_;
+    utils::Mutex&   mutex_;
+    utils::RWMutex& pipemutex_;
 public:
-    QueueSchedulerPickScope(utils::Mutex& mutex) : mutex_(mutex) { lock(); }
-    ~QueueSchedulerPickScope() { mutex_.unlock(); }
+    QueueSchedulerPickScope(utils::Mutex& mutex)
+        : mutex_(mutex), pipemutex_(Pipeline::instance().mutex()) {
+        lock();
+    }
+    ~QueueSchedulerPickScope() { unlock(); }
 
     void lock() {
-        Pipeline::instance().mutex().lock_shared();
+        pipemutex_.lock_shared();
         mutex_.lock();
     }
 
     void unlock() {
         mutex_.unlock();
-        Pipeline::instance().mutex().unlock_shared();
+        pipemutex_.unlock_shared();
     }
 
 };
@@ -98,12 +95,12 @@ QueueScheduler::pick_task()
     for (size_t i = 0; i <= len; i++) {
         conn = list_.front();
         list_.pop_front();
-        if (conn->mutex.try_lock()) {
+        if (conn->trylock()) {
             nodes_.erase(conn);
             break;
         }
         if (i == len) {
-            conn->mutex.lock();
+            conn->lock();
             nodes_.erase(conn);
             break;
         }
@@ -156,12 +153,11 @@ Pipeline::create_connection()
 void
 Pipeline::dispose_connection(Connection* conn)
 {
-    LOG(INFO, "disposing connection %d %p", conn->fd, conn);
+    LOG(DEBUG, "disposing connection %d %p", conn->fd, conn);
     StageMap::iterator it = map_.begin();
     Stage* stage = NULL;
 
-    utils::XLock lk(mutex_); // set exclusive lock
-    conn->mutex.lock();
+    conn->lock();
     while (it != map_.end()) {
         stage = it->second;
         if (stage) {
@@ -169,11 +165,10 @@ Pipeline::dispose_connection(Connection* conn)
         }
         ++it;
     }
-    shutdown(conn->fd, SHUT_RDWR);
     close(conn->fd);
-    conn->mutex.unlock();
+    conn->unlock();
     factory_->destroy_connection(conn);
-    LOG(INFO, "disposed");
+    LOG(DEBUG, "disposed");
 }
 
 void

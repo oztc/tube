@@ -102,6 +102,7 @@ void
 PollInStage::cleanup_connection(int client_fd, Connection* conn)
 {
     assert(conn);
+    shutdown(conn->fd, SHUT_RDWR);
     conn->inactive = true;
     epoll_ctl(epoll_fd_, EPOLL_CTL_DEL, conn->fd, NULL);
     recycle_stage_->sched_add(conn);
@@ -192,7 +193,10 @@ PollOutStage::sched_add(Connection* conn)
 void
 PollOutStage::sched_remove(Connection* conn)
 {
-    epoll_ctl(epoll_fd_, EPOLL_CTL_DEL, conn->fd, NULL);
+    if (epoll_ctl(epoll_fd_, EPOLL_CTL_DEL, conn->fd, NULL) == 0) {
+        conn->hold = false; // give up the lock
+        conn->unlock();
+    }
 }
 
 void
@@ -213,7 +217,6 @@ PollOutStage::main_loop()
             }
             // error happened
             sched_remove(conn);
-            conn->async_write_lock.unlock();
         }
     }
 }
@@ -234,7 +237,9 @@ RecycleStage::sched_add(Connection* conn)
 {
     utils::Lock lk(mutex_);
     queue_.push(conn);
-    cond_.notify_one();
+    if (queue_.size() >= recycle_batch_size_) {
+        cond_.notify_one();
+    }
     return true;
 }
 
@@ -242,16 +247,22 @@ void
 RecycleStage::main_loop()
 {
     Pipeline& pipeline = Pipeline::instance();
+    Connection* conns[recycle_batch_size_];
     while (true) {
         mutex_.lock();
-        while (queue_.empty()) {
+        while (queue_.size() < recycle_batch_size_) {
             cond_.wait(mutex_);
         }
-        Connection* conn = queue_.front();
-        queue_.pop();
+        for (int i = 0; i < recycle_batch_size_; i++) {
+            conns[i] = queue_.front();
+            queue_.pop();
+        }
         mutex_.unlock();
 
-        pipeline.dispose_connection(conn);
+        utils::XLock lk(pipeline.mutex());
+        for (int i = 0; i < recycle_batch_size_; i++) {
+            pipeline.dispose_connection(conns[i]);
+        }
     }
 }
 

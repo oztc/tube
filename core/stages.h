@@ -88,9 +88,11 @@ class RecycleStage : public Stage
     utils::Mutex            mutex_;
     utils::Condition        cond_;
     std::queue<Connection*> queue_;
-    std::set<Connection*>   connections_;
+    size_t                  recycle_batch_size_;
 public:
-    RecycleStage() : Stage("recycle") {}
+    RecycleStage(size_t recycle_batch_size = 1)
+        : Stage("recycle"), recycle_batch_size_(recycle_batch_size) {}
+
     virtual ~RecycleStage() {}
 
     virtual bool sched_add(Connection* conn);

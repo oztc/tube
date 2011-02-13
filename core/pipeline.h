@@ -28,8 +28,8 @@ public:
     Buffer    out_buf;
 
     // locks
+    bool         hold;
     utils::Mutex mutex;
-    utils::Mutex async_write_lock;
 
     bool trylock();
     void lock();

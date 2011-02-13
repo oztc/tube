@@ -7,6 +7,8 @@
 
 namespace pipeserv {
 
+class Stage;
+
 class Wrapper
 {
 protected:
@@ -33,6 +35,7 @@ class Response : public Wrapper
 {
     size_t      buffer_size_;
     bool        inactive_;
+    Stage*      poll_out_stage_;
 public:
     Response(Connection* conn, size_t buffer_size = 4096);
     virtual ~Response();

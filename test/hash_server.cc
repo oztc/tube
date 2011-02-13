@@ -36,7 +36,7 @@ public:
             std::stringstream ss;
             ss << hash(str);
             str = ss.str();
-            std::cout << "hash: " << str << std::endl;
+            //fprintf(stderr, "hash: %s\n", str.c_str());
             buf.pop(15);
             if (res.write_data((const byte*) str.c_str(), str.length()) < 0) {
                 res.close(); // close connection
@@ -58,14 +58,14 @@ class HashServer : public Server
 public:
     HashServer() : Server("0.0.0.0", "7000") {
         utils::set_fdtable_size(8096);
-        utils::logger.set_level(DEBUG);
+        //utils::logger.set_level(INFO);
         read_stage_ = new PollInStage();
-        //out_stage_ = new PollOutStage();
+        out_stage_ = new PollOutStage();
         recycle_stage_ = new RecycleStage();
         parse_stage_ = new HashParser();
 
         read_stage_->initialize();
-        //out_stage_->initialize();
+        out_stage_->initialize();
         recycle_stage_->initialize();
         parse_stage_->initialize();
     }
@@ -73,7 +73,7 @@ public:
     void start() {
         recycle_stage_->start_thread();
         read_stage_->start_thread();
-        //out_stage_->start_thread();
+        out_stage_->start_thread();
         for (int i = 0; i < 2; i++) {
             parse_stage_->start_thread();
         }
@@ -81,7 +81,7 @@ public:
 
     virtual ~HashServer() {
         delete read_stage_;
-        //delete out_stage_;
+        delete out_stage_;
         delete parse_stage_;
         delete recycle_stage_;
     }

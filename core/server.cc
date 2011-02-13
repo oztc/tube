@@ -3,6 +3,7 @@
 #include <netdb.h>
 #include <fcntl.h>
 #include <cstdlib>
+#include <signal.h>
 
 #include "core/server.h"
 #include "core/pipeline.h"
@@ -73,6 +74,7 @@ Server::listen(int queue_size)
 void
 Server::main_loop()
 {
+    ::signal(SIGPIPE, SIG_IGN);
     Pipeline& pipeline = Pipeline::instance();
     Stage* stage = pipeline.find_stage("poll_in");
     while (true) {
@@ -93,7 +95,6 @@ Server::main_loop()
         conn->fd = client_fd;
         conn->prio = 0;
         conn->inactive = false;
-        LOG(DEBUG, "changing into blocked mode");
         utils::set_socket_blocking(conn->fd, false);
 
         LOG(INFO, "accepted one connection");
