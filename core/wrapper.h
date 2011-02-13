@@ -40,9 +40,10 @@ public:
     Response(Connection* conn, size_t buffer_size = 4096);
     virtual ~Response();
 
+    int     response_code() const;
     ssize_t write_data(const byte* ptr, size_t sz);
     ssize_t flush_data();
-    bool    active() { return !inactive_; }
+    bool    active() const { return !inactive_; }
     void    close();
 };
 

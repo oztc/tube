@@ -28,7 +28,6 @@ public:
     Buffer    out_buf;
 
     // locks
-    bool         hold;
     utils::Mutex mutex;
 
     bool trylock();

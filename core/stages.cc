@@ -4,6 +4,7 @@
 
 #include "utils/exception.h"
 #include "utils/logger.h"
+#include "utils/misc.h"
 #include "core/stages.h"
 #include "core/pipeline.h"
 
@@ -40,8 +41,8 @@ Stage::main_loop()
     if (!sched_) return;
     while (true) {
         Connection* conn = sched_->pick_task();
-        process_task(conn);
-        conn->unlock();
+        if (process_task(conn) >= 0)
+            conn->unlock();
     }
 }
 
@@ -194,7 +195,6 @@ void
 PollOutStage::sched_remove(Connection* conn)
 {
     if (epoll_ctl(epoll_fd_, EPOLL_CTL_DEL, conn->fd, NULL) == 0) {
-        conn->hold = false; // give up the lock
         conn->unlock();
     }
 }

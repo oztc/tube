@@ -26,6 +26,7 @@ typedef boost::thread Thread;
 
 void set_socket_blocking(int fd, bool block);
 void set_fdtable_size(size_t sz);
+pid_t  get_thread_id();
 }
 }
 

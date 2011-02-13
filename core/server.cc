@@ -56,12 +56,33 @@ Server::Server(const char* host, const char* service) throw()
         err += host;
         throw std::invalid_argument(err);
     }
+
+    read_stage_ = new PollInStage();
+    out_stage_ = new PollOutStage();
+    recycle_stage_ = new RecycleStage();
+
 }
 
 Server::~Server()
 {
+    delete read_stage_;
+    delete out_stage_;
+    delete recycle_stage_;
+
     shutdown(fd_, SHUT_RDWR);
     close(fd_);
+}
+
+void
+Server::initialize_stages()
+{
+    read_stage_->initialize();
+    out_stage_->initialize();
+    recycle_stage_->initialize();
+
+    recycle_stage_->start_thread();
+    read_stage_->start_thread();
+    out_stage_->start_thread();
 }
 
 void

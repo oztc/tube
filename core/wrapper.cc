@@ -45,10 +45,17 @@ Response::Response(Connection* conn, size_t buffer_size)
 
 Response::~Response()
 {
-    if (active()) {
-        conn_->hold = true; // hold the lock, so conn_->unlock won't unlock
+    if (response_code() < 0) {
         poll_out_stage_->sched_add(conn_); // silently flush
     }
+}
+
+int
+Response::response_code() const
+{
+    if (active() && conn_->out_buf.size() > 0)
+        return -1;
+    return 0;
 }
 
 ssize_t

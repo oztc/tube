@@ -8,22 +8,19 @@ namespace pipeserv {
 bool
 Connection::trylock()
 {
-    bool locked = mutex.try_lock();
-    if (locked) hold = false;
-    return locked;
+    return mutex.try_lock();
 }
 
 void
 Connection::lock()
 {
     mutex.lock();
-    hold = false;
 }
 
 void
 Connection::unlock()
 {
-    if (!hold) mutex.unlock();
+    mutex.unlock();
 }
 
 Scheduler::Scheduler()

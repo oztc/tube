@@ -1,5 +1,7 @@
 #include <sys/time.h>
 #include <sys/resource.h>
+#include <sys/syscall.h>
+#include <sys/types.h>
 
 #include "utils/misc.h"
 #include "utils/exception.h"
@@ -31,6 +33,12 @@ set_fdtable_size(size_t size)
     lmt.rlim_max = size;
 
     setrlimit(RLIMIT_NOFILE, &lmt);
+}
+
+pid_t
+get_thread_id()
+{
+    return syscall(SYS_gettid);
 }
 
 }
