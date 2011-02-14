@@ -1,5 +1,6 @@
 #include <string>
 #include <iostream>
+#include <cassert>
 
 #include "utils/logger.h"
 #include "utils/misc.h"
@@ -14,12 +15,17 @@ class PingPongParser : public ParserStage
 public:
     virtual int process_task(Connection* conn) {
         Buffer& buf = conn->in_buf;
-        if (buf.size() < 4096) return 0;
         Response res(conn);
-        if (res.write_data(buf.ptr(), buf.size()) < 0) {
-            res.close();
+        size_t len = 0;
+        while (true) {
+            byte* data = buf.get_page_segment(buf.first_page(), &len);
+            if (len == 0)
+                break;
+            if (res.write_data(data, len) <= 0) {
+                res.close();
+            }
+            buf.pop(len);
         }
-        buf.clear();
         return res.response_code();
     }
 };

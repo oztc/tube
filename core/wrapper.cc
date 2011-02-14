@@ -9,32 +9,30 @@ Wrapper::Wrapper(Connection* conn)
 
 Request::Request(Connection* conn)
   : Wrapper(conn)
-{}
+{
+    utils::set_socket_blocking(conn->fd, true);
+}
 
 Request::~Request()
-{}
+{
+    utils::set_socket_blocking(conn_->fd, false);
+}
 
 ssize_t
 Request::read_data(byte* ptr, size_t sz)
 {
     Buffer& buf = conn_->in_buf;
-    ssize_t ret = 0;
-    if (buf.size() >= sz) {
-        memcpy((void*) ptr, buf.ptr(), sz);
-        buf.pop(sz);
-        return sz;
-    }
-
     if (buf.size() > 0) {
-        memcpy((void*) ptr, buf.ptr(), buf.size());
-        ptr += buf.size();
-        sz -= buf.size();
-        buf.clear();
+        size_t len = 0;
+        byte* bufptr = buf.get_page_segment(buf.first_page(), &len);
+        memcpy(ptr, bufptr, len);
+        return buf.pop_page();
+    } else {
+        disable_poll();
+        ssize_t nread = ::read(conn_->fd, (void*) ptr, sz);
+        enable_poll();
+        return nread;
     }
-    disable_poll();
-    ret = ::read(conn_->fd, (void*) ptr, sz);
-    enable_poll();
-    return ret;
 }
 
 Response::Response(Connection* conn, size_t buffer_size)
@@ -77,13 +75,15 @@ Response::flush_data()
 {
     Buffer& buf = conn_->out_buf;
     ssize_t ret = buf.size();
+    disable_poll();
     while (buf.size() > 0) {
-        ssize_t rs = ::write(conn_->fd, buf.ptr(), buf.size());
+        ssize_t rs = buf.write_to_fd(conn_->fd);
         if (rs <= 0) {
             return rs;
         }
         buf.pop(rs);
     }
+    enable_poll();
     return ret;
 }
 

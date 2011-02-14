@@ -36,7 +36,6 @@ class PollInStage : public Stage
     int epoll_fd_;
     int max_event_;
     int timeout_;
-    size_t tmp_buf_size_;
 
     Stage* parser_stage_;
     Stage* recycle_stage_;
@@ -45,10 +44,8 @@ public:
     ~PollInStage();
 
     int timeout() const { return timeout_; }
-    int temp_buffer_size() const { return tmp_buf_size_; }
 
     void set_timeout(int timeout) { timeout_ = timeout; }
-    void set_temp_buffer_size(size_t sz) { tmp_buf_size_ = sz; }
 
     virtual bool sched_add(Connection* conn);
     virtual void sched_remove(Connection* conn);

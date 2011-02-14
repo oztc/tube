@@ -12,9 +12,9 @@ class HashParser : public ParserStage
 {
 public:
 
-    unsigned int hash(std::string str) {
+    unsigned int hash(char str[]) {
         unsigned int sum = 0;
-        for (int i = 0; i < str.size(); i++) {
+        for (int i = 0; i < 15; i++) {
             sum += str[i] << i;
         }
         return sum;
@@ -24,15 +24,18 @@ public:
         Buffer& buf = conn->in_buf;
         if (buf.size() < 15)
             return 0;
+        char str[16];
+        memset(str, 0, 16);
+
         Response res(conn);
         while (buf.size() >= 15 && res.active()) {
-            std::string str(buf.ptr(), buf.ptr() + 15);
+            buf.copy_front((byte*) str, 15);
+            buf.pop(15);
             std::stringstream ss;
             ss << hash(str);
-            str = ss.str();
-            //fprintf(stderr, "hash: %s\n", str.c_str());
-            buf.pop(15);
-            if (res.write_data((const byte*) str.c_str(), str.length()) < 0) {
+            std::string result = ss.str();
+            if (res.write_data((const byte*) result.c_str(),
+                               result.length()) < 0) {
                 res.close(); // close connection
             }
         }

@@ -37,7 +37,7 @@ class Response : public Wrapper
     bool        inactive_;
     Stage*      poll_out_stage_;
 public:
-    Response(Connection* conn, size_t buffer_size = 4096);
+    Response(Connection* conn, size_t buffer_size = (4 << 20));
     virtual ~Response();
 
     int     response_code() const;

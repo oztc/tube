@@ -58,7 +58,6 @@ PollInStage::PollInStage(int max_event)
     sched_ = NULL; // no scheduler, need to override ``sched_add``
     max_event_ = max_event;
     timeout_ = -1; // no timeout by default
-    tmp_buf_size_ = 4096; // 4k for tmp buf
 
     epoll_fd_ = epoll_create(max_event_);
     if (epoll_fd_ < 0)
@@ -114,27 +113,15 @@ PollInStage::read_connection(int client_fd, Connection* conn)
 {
     assert(conn);
 
-    ssize_t sz = -1;
-    byte buf[tmp_buf_size_];
-
     if (!conn->trylock()) // avoid lock contention
         return;
+    int nread = conn->in_buf.read_from_fd(conn->fd);
+    conn->unlock();
 
-    while (true) {
-        sz = read(client_fd, buf, tmp_buf_size_);
-        if (sz <= 0) {
-            conn->unlock();
-            if (sz == 0 || !(errno == EAGAIN || errno == EWOULDBLOCK)) {
-                // according to man pages, 0 means end of file
-                cleanup_connection(client_fd, conn);
-            } else {
-                parser_stage_->sched_add(conn);
-            }
-            return;
-        } else {
-            // append read data into input buffer
-            conn->in_buf.append(buf, sz);
-        }
+    if (nread < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+        parser_stage_->sched_add(conn);
+    } else {
+        cleanup_connection(client_fd, conn);
     }
 }
 
@@ -208,10 +195,8 @@ PollOutStage::main_loop()
         for (int i = 0; i < nfds; i++) {
             Connection* conn = (Connection*) ev[i].data.ptr;
             if (ev[i].events & EPOLLOUT) {
-                ssize_t sz = write(conn->fd, conn->out_buf.ptr(),
-                                   conn->out_buf.size());
-                if (sz > 0) {
-                    conn->out_buf.pop(sz);
+                ssize_t nwrite = conn->out_buf.write_to_fd(conn->fd);
+                if (nwrite <= 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
                     continue;
                 }
             }

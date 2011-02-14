@@ -8,12 +8,17 @@
 
 #define MAX_LOG_LENGTH 1024
 
+#ifdef DEBUG
 #define LOG(level, ...)                                                 \
     do {                                                                \
         char str[MAX_LOG_LENGTH];                                       \
         snprintf(str, MAX_LOG_LENGTH, __VA_ARGS__);                     \
         pipeserv::utils::logger.log(level, str, __FILE__, __LINE__);    \
     } while (0)                                                         \
+
+#else
+#define LOG(...)
+#endif
 
 #define ERROR   0
 #define WARNING 1

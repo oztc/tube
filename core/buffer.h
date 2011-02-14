@@ -5,7 +5,7 @@
 
 #include <cstdlib>
 #include <stdint.h>
-#include <vector>
+#include <list>
 
 namespace pipeserv {
 
@@ -13,23 +13,39 @@ typedef uint8_t byte;
 
 class Buffer
 {
-    std::vector<byte> vec_;
-    int max_size_;
+    static const size_t kPageSize;
 public:
+    typedef std::list<byte*> PageList;
+    typedef PageList::iterator PageIterator;
+
     Buffer();
     virtual ~Buffer();
 
-    void set_max_size(int max_size) { max_size_ = max_size; }
-    int  max_size() { return max_size_; }
+    size_t size() const { return size_; }
+
+    int read_from_fd(int fd);
+    int write_to_fd(int fd);
 
     void append(const byte* ptr, size_t sz);
-    void pop(size_t sz);
+    bool copy_front(byte* ptr, size_t sz);
+    bool pop(size_t pop_size);
+    int  pop_page();
     void clear();
 
-    size_t size() { return vec_.size(); }
+    PageIterator page_begin() { return pages_.begin(); }
+    PageIterator page_end() { return pages_.end(); }
 
-    byte operator[](int idx) const { return vec_[idx]; }
-    const byte* ptr() const { return &vec_[0]; }
+    // refine page segment according to page start pointer
+    byte* first_page() const { return pages_.front(); }
+    byte* last_page() const { return pages_.back(); }
+    byte* get_page_segment(byte* page_start_ptr, size_t* len_ret);
+
+private:
+    byte*    extra_page_;
+    PageList pages_;
+
+    size_t   left_offset_, right_offset_;
+    size_t   size_;
 };
 
 }
