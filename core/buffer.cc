@@ -144,24 +144,20 @@ Buffer::write_to_fd(int fd)
         return 0;
     int nwrite = 0;
     struct iovec vec[2];
-    while (true) {
-        PageList::iterator it = pages_.begin();
-        int nvec = MIN(2, pages_.size());
-        for (int i = 0; i < nvec; i++, ++it) {
-            byte* ptr = *it;
-            if (i == 0)
-                ptr += left_offset_;
-            vec[i].iov_base = ptr;
-            vec[i].iov_len = kPageSize;
-        }
-        vec[0].iov_len -= left_offset_;
-        vec[nvec - 1].iov_len -= right_offset_;
-        nwrite = writev(fd, vec, nvec);
-        if (nwrite > 0) {
-            pop(nwrite);
-        } else {
-            break;
-        }
+    PageList::iterator it = pages_.begin();
+    int nvec = MIN(2, pages_.size());
+    for (int i = 0; i < nvec; i++, ++it) {
+        byte* ptr = *it;
+        if (i == 0)
+            ptr += left_offset_;
+        vec[i].iov_base = ptr;
+        vec[i].iov_len = kPageSize;
+    }
+    vec[0].iov_len -= left_offset_;
+    vec[nvec - 1].iov_len -= right_offset_;
+    nwrite = writev(fd, vec, nvec);
+    if (nwrite > 0) {
+        pop(nwrite);
     }
     return nwrite;
 }

@@ -58,7 +58,7 @@ Server::Server(const char* host, const char* service) throw()
     }
 
     read_stage_ = new PollInStage();
-    out_stage_ = new PollOutStage();
+    out_stage_ = new WriteBackStage();
     recycle_stage_ = new RecycleStage();
 
 }
@@ -81,8 +81,10 @@ Server::initialize_stages()
     recycle_stage_->initialize();
 
     recycle_stage_->start_thread();
-    read_stage_->start_thread();
-    out_stage_->start_thread();
+    for (int i = 0; i < 2; i++) {
+        read_stage_->start_thread();
+        out_stage_->start_thread();
+    }
 }
 
 void

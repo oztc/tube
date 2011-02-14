@@ -32,7 +32,8 @@ Scheduler::~Scheduler()
 {
 }
 
-QueueScheduler::QueueScheduler()
+QueueScheduler::QueueScheduler(bool supress_connection_lock)
+    : Scheduler(), supress_connection_lock_(supress_connection_lock)
 {
 }
 
@@ -92,12 +93,13 @@ QueueScheduler::pick_task()
     for (size_t i = 0; i <= len; i++) {
         conn = list_.front();
         list_.pop_front();
-        if (conn->trylock()) {
+        if (supress_connection_lock_ || conn->trylock()) {
             nodes_.erase(conn);
             break;
         }
         if (i == len) {
-            conn->lock();
+            if (!supress_connection_lock_)
+                conn->lock();
             nodes_.erase(conn);
             break;
         }

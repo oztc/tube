@@ -1,3 +1,5 @@
+#include <cstdio>
+
 #include "core/stages.h"
 #include "core/wrapper.h"
 
@@ -38,13 +40,13 @@ Request::read_data(byte* ptr, size_t sz)
 Response::Response(Connection* conn, size_t buffer_size)
     : Wrapper(conn), buffer_size_(buffer_size), inactive_(false)
 {
-    poll_out_stage_ = Pipeline::instance().find_stage("poll_out");
+    out_stage_ = Pipeline::instance().find_stage("write_back");
 }
 
 Response::~Response()
 {
     if (response_code() < 0) {
-        poll_out_stage_->sched_add(conn_); // silently flush
+        out_stage_->sched_add(conn_); // silently flush
     }
 }
 

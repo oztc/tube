@@ -35,7 +35,7 @@ class Response : public Wrapper
 {
     size_t      buffer_size_;
     bool        inactive_;
-    Stage*      poll_out_stage_;
+    Stage*      out_stage_;
 public:
     Response(Connection* conn, size_t buffer_size = (4 << 20));
     virtual ~Response();

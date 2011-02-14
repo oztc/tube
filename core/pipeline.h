@@ -57,8 +57,10 @@ protected:
 
     utils::Mutex      mutex_;
     utils::Condition  cond_;
+
+    bool      supress_connection_lock_;
 public:
-    QueueScheduler();
+    QueueScheduler(bool supress_connection_lock = false);
     ~QueueScheduler();
 
     virtual void        add_task(Connection* conn);

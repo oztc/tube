@@ -5,6 +5,7 @@
 
 #include <sys/epoll.h>
 #include <queue>
+#include <vector>
 #include <set>
 
 #include "core/pipeline.h"
@@ -33,7 +34,17 @@ public:
 
 class PollInStage : public Stage
 {
-    int epoll_fd_;
+    typedef std::set<int> PollSet;
+    struct Poll {
+        PollSet fds;
+        int     poll_fd;
+
+        Poll(int fd) : poll_fd(fd) {}
+    };
+
+    utils::Mutex      mutex_;
+    std::vector<Poll> polls_;
+
     int max_event_;
     int timeout_;
 
@@ -53,24 +64,19 @@ public:
     virtual void initialize();
     virtual void main_loop();
 private:
-    void read_connection(int client_fd, Connection* conn);
-    void cleanup_connection(int client_fd, Connection* conn);
+    void add_poll(int poll_fd);
+    void read_connection(Connection* conn);
+    void cleanup_connection(Connection* conn);
 };
 
-class PollOutStage : public Stage
+
+class WriteBackStage : public Stage
 {
-    int epoll_fd_;
-    int max_event_;
-    int timeout_;
 public:
-    PollOutStage(int max_event = 256);
-    virtual ~PollOutStage();
+    WriteBackStage();
+    virtual ~WriteBackStage();
 
-    virtual void initialize();
-    virtual bool sched_add(Connection* conn);
-    virtual void sched_remove(Connection* conn);
-
-    virtual void main_loop();
+    virtual int process_task(Connection* conn);
 };
 
 class ParserStage : public Stage

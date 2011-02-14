@@ -16,7 +16,7 @@ class Server
     size_t addr_size_;
 protected:
     PollInStage* read_stage_;
-    PollOutStage* out_stage_;
+    WriteBackStage* out_stage_;
     RecycleStage* recycle_stage_;
 public:
     Server(const char* host, const char* service) throw();
