@@ -9,6 +9,7 @@
 #include <set>
 
 #include "core/pipeline.h"
+#include <core/poller.h>
 
 namespace pipeserv {
 
@@ -34,17 +35,10 @@ public:
 
 class PollInStage : public Stage
 {
-    typedef std::set<int> PollSet;
-    struct Poll {
-        PollSet fds;
-        int     poll_fd;
-
-        Poll(int fd) : poll_fd(fd) {}
-    };
-
     utils::Mutex      mutex_;
-    std::vector<Poll> polls_;
+    std::vector<Poller*> pollers_;
 
+    std::string poller_name_;
     int max_event_;
     int timeout_;
 
@@ -55,7 +49,6 @@ public:
     ~PollInStage();
 
     int timeout() const { return timeout_; }
-
     void set_timeout(int timeout) { timeout_ = timeout; }
 
     virtual bool sched_add(Connection* conn);
@@ -63,10 +56,12 @@ public:
 
     virtual void initialize();
     virtual void main_loop();
+
 private:
-    void add_poll(int poll_fd);
+    void add_poll(Poller* poller);
     void read_connection(Connection* conn);
     void cleanup_connection(Connection* conn);
+    void handle_connection(Connection* conn, PollerEvent evt);
 };
 
 

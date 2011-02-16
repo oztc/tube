@@ -1,6 +1,7 @@
 #include <cassert>
 #include <cstdlib>
 #include <limits.h>
+#include <boost/function.hpp>
 #include <boost/bind.hpp>
 
 #include "utils/exception.h"
@@ -57,22 +58,22 @@ PollInStage::PollInStage(int max_event)
     : Stage("poll_in")
 {
     sched_ = NULL; // no scheduler, need to override ``sched_add``
-    max_event_ = max_event;
     timeout_ = 10; // 10s by default
+    poller_name_ = PollerFactory::instance().default_poller_name();
 }
 
 PollInStage::~PollInStage()
 {
-    for (int i = 0; i < polls_.size(); i++) {
-        close(polls_[i].poll_fd);
+    for (int i = 0; i < pollers_.size(); i++) {
+        PollerFactory::instance().destroy_poller(pollers_[i]);
     }
 }
 
 void
-PollInStage::add_poll(int poll_fd)
+PollInStage::add_poll(Poller* poller)
 {
     utils::Lock lk(mutex_);
-    polls_.push_back(Poll(poll_fd));
+    pollers_.push_back(poller);
 }
 
 bool
@@ -82,8 +83,8 @@ PollInStage::sched_add(Connection* conn)
     // pick the poll with minimum size
     int min_size = INT_MAX;
     int poll_idx = -1;
-    for (int i = 0; i < polls_.size(); i++) {
-        size_t nfds = polls_[i].fds.size();
+    for (int i = 0; i < pollers_.size(); i++) {
+        size_t nfds = pollers_[i]->size();
         if (min_size > nfds) {
             poll_idx = i;
             min_size = nfds;
@@ -92,28 +93,17 @@ PollInStage::sched_add(Connection* conn)
     if (poll_idx < 0) {
         return false;
     }
-    struct epoll_event ev;
-    ev.events = EPOLLIN;
-    ev.data.ptr = conn;
-    polls_[poll_idx].fds.insert(conn->fd);
-    if (epoll_ctl(polls_[poll_idx].poll_fd, EPOLL_CTL_ADD, conn->fd, &ev) < 0) {
-        return false;
-    }
-    return true;
+    return pollers_[poll_idx]->add_fd(conn->fd, conn, POLLER_EVENT_READ |
+                                      POLLER_EVENT_ERROR | POLLER_EVENT_HUP);
 }
 
 void
 PollInStage::sched_remove(Connection* conn)
 {
     utils::Lock lk(mutex_);
-    for (int i = 0; i < polls_.size(); i++) {
-        PollSet& pollset = polls_[i].fds;
-        PollSet::iterator it = pollset.find(conn->fd);
-        if (it != pollset.end()) {
-            pollset.erase(conn->fd);
-            epoll_ctl(polls_[i].poll_fd, EPOLL_CTL_DEL, conn->fd, NULL);
+    for (int i = 0; i < pollers_.size(); i++) {
+        if (pollers_[i]->remove_fd(conn->fd))
             return;
-        }
     }
 }
 
@@ -158,26 +148,24 @@ PollInStage::read_connection(Connection* conn)
 }
 
 void
+PollInStage::handle_connection(Connection* conn, PollerEvent evt)
+{
+    if ((evt & POLLER_EVENT_HUP) || (evt & POLLER_EVENT_ERROR)) {
+        cleanup_connection(conn);
+    } else if (evt & POLLER_EVENT_READ) {
+        read_connection(conn);
+    }
+}
+
+void
 PollInStage::main_loop()
 {
-    int poll_fd = epoll_create(max_event_);
-    if (poll_fd < 0) {
-        throw SyscallException();
-        return;
-    }
-    struct epoll_event ev[max_event_];
-    add_poll(poll_fd);
-    while (true) {
-        int nfds = epoll_wait(poll_fd, ev, max_event_, timeout_);
-        for (int i = 0; i < nfds; i++) {
-            Connection* conn = (Connection*) ev[i].data.ptr;
-            if ((ev[i].events & EPOLLHUP) || (ev[i].events & EPOLLERR)) {
-                cleanup_connection(conn);
-            } else if (ev[i].events & EPOLLIN) {
-                read_connection(conn);
-            }
-        }
-    }
+    Poller* poller = PollerFactory::instance().create_poller(poller_name_);
+    Poller::PollerCallback func = boost::bind(&PollInStage::handle_connection,
+                                              this, _1, _2);
+    poller->set_handler(func);
+    add_poll(poller);
+    poller->handle_event(timeout_);
 }
 
 WriteBackStage::WriteBackStage()
