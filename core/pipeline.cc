@@ -35,6 +35,8 @@ Scheduler::~Scheduler()
 QueueScheduler::QueueScheduler(bool supress_connection_lock)
     : Scheduler(), supress_connection_lock_(supress_connection_lock)
 {
+    nodes_.set_empty_key(NULL);
+    nodes_.set_deleted_key((Connection*) 0x08);
 }
 
 void
@@ -55,7 +57,9 @@ QueueScheduler::add_task(Connection* conn)
     nodes_.insert(std::make_pair(conn, --node));
 
     lk.unlock();
-    cond_.notify_all();
+    if (need_notify) {
+        cond_.notify_one();
+    }
 }
 
 class QueueSchedulerPickScope
@@ -90,23 +94,19 @@ QueueScheduler::pick_task()
     }
     size_t len = list_.size();
     Connection* conn = NULL;
-    for (size_t i = 0; i <= len; i++) {
-        conn = list_.front();
-        list_.pop_front();
+    for (NodeList::iterator it = list_.begin(); it != list_.end(); ++it) {
+        conn = *it;
         if (supress_connection_lock_ || conn->trylock()) {
+            list_.erase(it);
             nodes_.erase(conn);
-            break;
+            return conn;
         }
-        if (i == len) {
-            if (!supress_connection_lock_)
-                conn->lock();
-            nodes_.erase(conn);
-            break;
-        }
-        list_.push_back(conn);
-        NodeList::iterator it = list_.end();
-        nodes_[conn] = --it;
     }
+    conn = list_.front();
+    if (!supress_connection_lock_)
+        conn->lock();
+    list_.pop_front();
+    nodes_.erase(conn);
     return conn;
 }
 

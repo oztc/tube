@@ -9,14 +9,16 @@
 #include <string>
 #include <set>
 
+#include <google/sparse_hash_map>
+#include <google/dense_hash_map>
+
 #include "utils/misc.h"
 #include "core/buffer.h"
 
 namespace pipeserv {
 
-class Connection
+struct Connection
 {
-public:
     sockaddr* addr;
     socklen_t addr_len;
     int       fd;
@@ -35,22 +37,23 @@ public:
     void unlock();
 };
 
-class Scheduler
+class Scheduler : utils::Noncopyable
 {
 public:
     Scheduler();
     virtual ~Scheduler();
 
-    virtual void add_task(Connection* conn)    = 0;
-    virtual Connection* pick_task()            = 0;
-    virtual void remove_task(Connection* conn) = 0;
+    virtual void add_task(Connection* conn)     = 0;
+    virtual Connection* pick_task()             = 0;
+    virtual void remove_task(Connection* conn)  = 0;
 };
 
 class QueueScheduler : public Scheduler
 {
 protected:
     typedef std::list<Connection*> NodeList;
-    typedef std::map<Connection*, NodeList::iterator> NodeMap;
+    typedef google::dense_hash_map<Connection*, NodeList::iterator> NodeMap;
+    //typedef std::map<Connection*, NodeList::iterator> NodeMap;
 
     NodeList  list_;
     NodeMap   nodes_;
@@ -77,9 +80,9 @@ public:
     virtual void        destroy_connection(Connection* conn);
 };
 
-class Pipeline
+class Pipeline : utils::Noncopyable
 {
-    typedef std::map<std::string, Stage*> StageMap;
+    typedef google::sparse_hash_map<std::string, Stage*> StageMap;
     StageMap       map_;
     utils::RWMutex mutex_;
 
