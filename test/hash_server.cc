@@ -14,7 +14,7 @@ public:
 
     unsigned int hash(char str[]) {
         unsigned int sum = 0;
-        for (int i = 0; i < 15; i++) {
+        for (int i = 0; i < 16; i++) {
             sum += str[i] << i;
         }
         return sum;
@@ -22,20 +22,17 @@ public:
 
     virtual int process_task(Connection* conn) {
         Buffer& buf = conn->in_buf;
-        if (buf.size() < 15)
+        if (buf.size() < 16)
             return 0;
-        char str[16];
-        memset(str, 0, 16);
+        char str[32];
+        memset(str, 0, 32);
 
         Response res(conn);
-        while (buf.size() >= 15 && res.active()) {
-            buf.copy_front((byte*) str, 15);
-            buf.pop(15);
-            std::stringstream ss;
-            ss << hash(str);
-            std::string result = ss.str();
-            if (res.write_data((const byte*) result.c_str(),
-                               result.length()) < 0) {
+        while (buf.size() >= 16 && res.active()) {
+            buf.copy_front((byte*) str, 16);
+            buf.pop(16);
+            snprintf(str, 32, "%.16d", hash(str));
+            if (res.write_data((const byte*) str, 16) < 0) {
                 res.close(); // close connection
             }
         }
@@ -49,7 +46,7 @@ class HashServer : public Server
 public:
     HashServer() : Server("0.0.0.0", "7000") {
         utils::set_fdtable_size(8096);
-        //utils::logger.set_level(INFO);
+        utils::logger.set_level(DEBUG);
         parse_stage_ = new HashParser();
         parse_stage_->initialize();
         initialize_stages();

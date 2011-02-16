@@ -10,7 +10,7 @@ source = ['utils/logger.cc',
           'core/stages.cc',
           'core/wrapper.cc']
 
-cflags = '-g'
+cflags = '-g -DLOG_ENABLED'
 inc_path = ['.']
 libflags = ['pthread', 'boost_thread-mt']
 

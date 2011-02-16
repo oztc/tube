@@ -44,9 +44,7 @@ public:
     }
 
     void start() {
-        for (int i = 0; i < 2; i++) {
-            parser_stage_->start_thread();
-        }
+        parser_stage_->start_thread();
     }
 
     virtual ~PingPongServer() {

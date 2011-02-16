@@ -8,7 +8,7 @@
 
 #define MAX_LOG_LENGTH 1024
 
-#ifdef DEBUG
+#ifdef LOG_ENABLED
 #define LOG(level, ...)                                                 \
     do {                                                                \
         char str[MAX_LOG_LENGTH];                                       \

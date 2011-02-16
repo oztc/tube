@@ -12,8 +12,8 @@ namespace utils {
 void
 set_socket_blocking(int fd, bool block)
 {
-    int flags = -1;
-    flags = fcntl(fd, F_GETFL, 0);
+    int flags = -1, origflags = -1;
+    origflags = flags = fcntl(fd, F_GETFL, 0);
     if (flags < 0)
         throw SyscallException();
     if (block) {
@@ -21,7 +21,7 @@ set_socket_blocking(int fd, bool block)
     } else {
         flags |= O_NONBLOCK;
     }
-    if (fcntl(fd, F_SETFL, flags) < 0)
+    if (origflags != flags && fcntl(fd, F_SETFL, flags) < 0)
         throw SyscallException();
 }
 

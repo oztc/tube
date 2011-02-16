@@ -76,7 +76,7 @@ Buffer::append(const byte* ptr, size_t sz)
             break;
         }
     }
-    right_offset_ = kPageSize - ncopy;
+    right_offset_ = kPageSize - ncopy - (dest - pages_.back());
 }
 
 bool

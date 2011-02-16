@@ -81,7 +81,7 @@ Server::initialize_stages()
     recycle_stage_->initialize();
 
     recycle_stage_->start_thread();
-    for (int i = 0; i < 2; i++) {
+    for (int i = 0; i < 1; i++) {
         read_stage_->start_thread();
         out_stage_->start_thread();
     }

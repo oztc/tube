@@ -51,7 +51,7 @@ class PollInStage : public Stage
     Stage* parser_stage_;
     Stage* recycle_stage_;
 public:
-    PollInStage(int max_event = 256);
+    PollInStage(int max_event = 1024);
     ~PollInStage();
 
     int timeout() const { return timeout_; }
