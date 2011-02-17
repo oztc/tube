@@ -1,3 +1,10 @@
+#include "config.h"
+
+#ifndef USE_EPOLL
+#error "epoll is not supported"
+#endif
+
+#include <errno.h>
 #include <limits.h>
 #include <sys/epoll.h>
 
@@ -62,11 +69,15 @@ EpollPoller::add_fd(int fd, Connection* conn, PollerEvent evt)
         epoll_evt.events = build_epoll_event(evt);
         epoll_evt.data.ptr = conn;
         if (epoll_ctl(epoll_fd_, EPOLL_CTL_ADD, fd, &epoll_evt) < 0) {
-            remove_fd_set(fd);
-            return false;
+            if (errno != EEXIST) {
+                // fd is not watched
+                remove_fd_set(fd);
+            }
+            goto failed;
         }
         return true;
     }
+failed:
     return false;
 }
 
@@ -75,11 +86,15 @@ EpollPoller::remove_fd(int fd)
 {
     if (remove_fd_set(fd)) {
         if (epoll_ctl(epoll_fd_, EPOLL_CTL_DEL, fd, NULL) < 0) {
-            add_fd_set(fd);
-            return false;
+            if (errno != ENOENT) {
+                // fd is watched
+                add_fd_set(fd);
+            }
+            goto failed;
         }
         return true;
     }
+failed:
     return false;
 }
 

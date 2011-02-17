@@ -4,7 +4,8 @@
 #include <sys/time.h>
 #include <sys/syscall.h>
 
-#include "logger.h"
+#include "utils/logger.h"
+#include "utils/misc.h"
 
 namespace pipeserv {
 namespace utils {
@@ -56,7 +57,7 @@ Logger::log(int level, const char* str, const char* file, int line)
     if (level <= current_level_) {
         char logstr[MAX_LOG_LENGTH];
         struct timeval tv;
-        pid_t tid = syscall(SYS_gettid);
+        pid_t tid = get_thread_id();
         gettimeofday(&tv, NULL);
         snprintf(logstr, MAX_LOG_LENGTH, "%lu.%.6lu thread %u %s:%d : %s",
                  tv.tv_sec, tv.tv_usec, tid, file, line, str);

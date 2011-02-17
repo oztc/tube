@@ -1,3 +1,4 @@
+#include "config.h"
 #include "core/poller.h"
 
 namespace pipeserv {
@@ -33,10 +34,14 @@ PollerFactory::destroy_poller(Poller* poller)
 std::string
 PollerFactory::default_poller_name() const
 {
-#ifdef __linux__
+#ifdef USE_EPOLL
     return std::string("epoll");
 #else
+#ifdef USE_KQUEUE
+    return std::string("kqueue");
+#else
 #error "Not ported to this platform"
+#endif
 #endif
 }
 

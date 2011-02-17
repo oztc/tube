@@ -5,7 +5,7 @@
 
 #include <string>
 #include <google/dense_hash_set>
-#include <google/sparse_hash_map>
+#include <map>
 #include <boost/function.hpp>
 
 #include "utils/misc.h"
@@ -80,7 +80,7 @@ public:
     Poller* create_poller(std::string name);
     void    destroy_poller(Poller* poller);
 private:
-    typedef google::sparse_hash_map<std::string, CreateFunc> PollerMap;
+    typedef std::map<std::string, CreateFunc> PollerMap;
     PollerMap poller_map_;
 };
 

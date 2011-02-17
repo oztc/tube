@@ -3,13 +3,12 @@
 #ifndef _STAGES_H_
 #define _STAGES_H_
 
-#include <sys/epoll.h>
 #include <queue>
 #include <vector>
 #include <set>
 
 #include "core/pipeline.h"
-#include <core/poller.h>
+#include "core/poller.h"
 
 namespace pipeserv {
 

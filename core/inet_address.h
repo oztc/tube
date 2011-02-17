@@ -3,6 +3,9 @@
 #ifndef _INET_ADDRESS_H_
 #define _INET_ADDRESS_H_
 
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
 #include <arpa/inet.h>
 #include <string>
 

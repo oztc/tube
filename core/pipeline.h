@@ -9,7 +9,7 @@
 #include <string>
 #include <set>
 
-#include <google/sparse_hash_map>
+#include <map>
 #include <google/dense_hash_map>
 
 #include "utils/misc.h"
@@ -55,7 +55,8 @@ class QueueScheduler : public Scheduler
 {
 protected:
     typedef std::list<Connection*> NodeList;
-    typedef google::dense_hash_map<Connection*, NodeList::iterator> NodeMap;
+    typedef google::dense_hash_map<Connection*, NodeList::iterator,
+                                   utils::PtrHashFunc> NodeMap;
     //typedef std::map<Connection*, NodeList::iterator> NodeMap;
 
     NodeList  list_;
@@ -85,7 +86,7 @@ public:
 
 class Pipeline : utils::Noncopyable
 {
-    typedef google::sparse_hash_map<std::string, Stage*> StageMap;
+    typedef std::map<std::string, Stage*> StageMap;
     StageMap       map_;
     utils::RWMutex mutex_;
 
