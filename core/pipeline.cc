@@ -23,6 +23,12 @@ Connection::unlock()
     mutex.unlock();
 }
 
+std::string
+Connection::address_string() const
+{
+    return address.address_string();
+}
+
 Scheduler::Scheduler()
 {
 
@@ -139,7 +145,6 @@ ConnectionFactory::create_connection()
 void
 ConnectionFactory::destroy_connection(Connection* conn)
 {
-    free(conn->addr);
     delete conn;
 }
 

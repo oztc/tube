@@ -101,26 +101,23 @@ Server::main_loop()
     Pipeline& pipeline = Pipeline::instance();
     Stage* stage = pipeline.find_stage("poll_in");
     while (true) {
-        struct sockaddr* addr = (struct sockaddr*) malloc(addr_size_);
-        socklen_t len = addr_size_;
-        memset(addr, 0, addr_size_);
-        LOG(INFO, "accepting...");
-        int client_fd = ::accept(fd_, addr, &len);
+        InternetAddress address;
+        socklen_t socklen = address.max_address_length();
+        int client_fd = ::accept(fd_, address.get_address(), &socklen);
         if (client_fd < 0) {
-            free(addr);
             LOG(WARNING, "Error when accepting socket: %s", strerror(errno));
             continue;
         }
         // set non-blocking mode
         Connection* conn = pipeline.create_connection();
-        conn->addr = addr;
-        conn->addr_len = len;
+        conn->address = address;
         conn->fd = client_fd;
         conn->prio = 0;
         conn->inactive = false;
         utils::set_socket_blocking(conn->fd, false);
 
-        LOG(INFO, "accepted one connection");
+        LOG(INFO, "accepted connection from %s",
+            conn->address_string().c_str());
         stage->sched_add(conn);
     }
 }

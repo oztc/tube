@@ -11,7 +11,7 @@
 namespace pipeserv {
 namespace utils {
 
-class SyscallException : std::exception
+class SyscallException : public std::exception
 {
     int err_;
 public:
@@ -22,7 +22,15 @@ public:
     }
 };
 
-class BufferFullException : std::exception
+class UnrecognizedAddress : public std::exception
+{
+public:
+    virtual const char* what() const throw() {
+        return "Unrecognized address family";
+    }
+};
+
+class BufferFullException : public std::exception
 {
     std::string msg_;
 public:

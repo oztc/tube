@@ -14,16 +14,17 @@
 
 #include "utils/misc.h"
 #include "core/buffer.h"
+#include "core/inet_address.h"
 
 namespace pipeserv {
 
 struct Connection
 {
-    sockaddr* addr;
-    socklen_t addr_len;
     int       fd;
     int       prio;
     bool      inactive;
+
+    InternetAddress address;
 
     // buffers
     Buffer    in_buf;
@@ -35,6 +36,8 @@ struct Connection
     bool trylock();
     void lock();
     void unlock();
+
+    std::string address_string() const;
 };
 
 class Scheduler : utils::Noncopyable

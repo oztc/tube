@@ -7,6 +7,7 @@ source = ['utils/logger.cc',
           'core/poller.cc',
           'core/buffer.cc',
           'core/pipeline.cc',
+          'core/inet_address.cc',
           'core/server.cc',
           'core/stages.cc',
           'core/wrapper.cc']
