@@ -10,6 +10,7 @@
 #include <sys/time.h>
 
 #include "utils/exception.h"
+#include "utils/logger.h"
 #include "core/poller.h"
 
 namespace pipeserv {
@@ -69,6 +70,7 @@ KqueuePoller::add_fd(int fd, Connection* conn, PollerEvent evt)
                0, 0, conn);
         memset(&zero, 0, sizeof(timespec));
         if (kevent(kqueue_, &kqueue_event, 1, NULL, 0, &zero) < 0) {
+            LOG(WARNING, "add to kqueue failed, remove fd %d", fd);
             remove_fd_set(fd);
             goto failed;
         }
@@ -89,6 +91,7 @@ KqueuePoller::remove_fd(int fd)
         memset(&zero, 0, sizeof(timespec));
         if (kevent(kqueue_, &kqueue_event, 1, NULL, 0, &zero) < 0) {
             if (errno != ENOENT) {
+                LOG(WARNING, "remove from kqueue failed, re-add fd %d", fd);
                 add_fd_set(fd);
             }
             goto failed;

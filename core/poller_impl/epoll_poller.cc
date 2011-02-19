@@ -9,6 +9,7 @@
 #include <sys/epoll.h>
 
 #include "utils/exception.h"
+#include "utils/logger.h"
 #include "core/poller.h"
 
 namespace pipeserv {
@@ -71,6 +72,7 @@ EpollPoller::add_fd(int fd, Connection* conn, PollerEvent evt)
         if (epoll_ctl(epoll_fd_, EPOLL_CTL_ADD, fd, &epoll_evt) < 0) {
             if (errno != EEXIST) {
                 // fd is not watched
+                LOG(WARNING, "add to epoll failed, remove fd %d", fd);
                 remove_fd_set(fd);
             }
             goto failed;
@@ -88,6 +90,7 @@ EpollPoller::remove_fd(int fd)
         if (epoll_ctl(epoll_fd_, EPOLL_CTL_DEL, fd, NULL) < 0) {
             if (errno != ENOENT) {
                 // fd is watched
+                LOG(WARNING, "remove from epoll failed, re-add the fd %d", fd);
                 add_fd_set(fd);
             }
             goto failed;
