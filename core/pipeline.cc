@@ -8,18 +8,24 @@ namespace pipeserv {
 bool
 Connection::trylock()
 {
-    return mutex.try_lock();
+    if (mutex.try_lock()) {
+        owner = utils::get_thread_id();
+        return true;
+    }
+    return false;
 }
 
 void
 Connection::lock()
 {
     mutex.lock();
+    owner = utils::get_thread_id();
 }
 
 void
 Connection::unlock()
 {
+    owner = -1;
     mutex.unlock();
 }
 
@@ -55,6 +61,8 @@ QueueScheduler::add_task(Connection* conn)
         NodeList::iterator node = it->second;
         list_.erase(node);
         list_.push_front(conn);
+        nodes_.erase(it);
+        nodes_.insert(std::make_pair(conn, list_.begin()));
         return;
     }
     bool need_notify = (list_.size() == 0);
@@ -64,7 +72,7 @@ QueueScheduler::add_task(Connection* conn)
 
     lk.unlock();
     if (need_notify) {
-        cond_.notify_one();
+        cond_.notify_all();
     }
 }
 
@@ -92,28 +100,51 @@ public:
 };
 
 Connection*
-QueueScheduler::pick_task()
+QueueScheduler::pick_task_nolock_connection()
+{
+    utils::Lock lk(mutex_);
+    while (list_.empty()) {
+        cond_.wait(lk);
+    }
+    Connection* conn = list_.front();
+    list_.pop_front();
+    nodes_.erase(conn);
+    return conn;
+}
+
+Connection*
+QueueScheduler::pick_task_lock_connection()
 {
     QueueSchedulerPickScope lk(mutex_);
     while (list_.empty()) {
         cond_.wait(lk);
     }
+
     size_t len = list_.size();
     Connection* conn = NULL;
     for (NodeList::iterator it = list_.begin(); it != list_.end(); ++it) {
         conn = *it;
-        if (supress_connection_lock_ || conn->trylock()) {
+        if (conn->trylock()) {
             list_.erase(it);
             nodes_.erase(conn);
             return conn;
         }
     }
     conn = list_.front();
-    if (!supress_connection_lock_)
-        conn->lock();
+    conn->lock();
     list_.pop_front();
     nodes_.erase(conn);
     return conn;
+}
+
+Connection*
+QueueScheduler::pick_task()
+{
+    if (supress_connection_lock_) {
+        return pick_task_nolock_connection();
+    } else {
+        return pick_task_lock_connection();
+    }
 }
 
 void

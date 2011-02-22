@@ -111,10 +111,10 @@ EpollPoller::handle_event(int timeout) throw()
     Connection* conn = NULL;
     while (true) {
         int nfds = epoll_wait(epoll_fd_, epoll_evt, MAX_EVENT_PER_POLL,
-                              timeout);
+                              timeout * 1000);
         if (nfds < 0) {
-            free(epoll_evt);
-            throw utils::SyscallException();
+            LOG(WARNING, "error in epoll_wait: %s", strerror(errno));
+            continue;
         }
         for (int i = 0; i < nfds; i++) {
             conn = (Connection*) epoll_evt[i].data.ptr;

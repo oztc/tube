@@ -115,10 +115,9 @@ KqueuePoller::handle_event(int timeout) throw ()
     tspec.tv_nsec = 0;
     while (true) {
         int nfds = ::kevent(kqueue_, NULL, 0, kevents, MAX_EVENT_PER_KEVENT,
-p                            &tspec);
+                            &tspec);
         if (nfds < 0) {
-            free(kevents);
-            throw utils::SyscallException();
+            LOG(WARNING, "error whene kevent: %s", strerror(errno));
         }
         for (int i = 0; i < nfds; i++) {
             conn = (Connection*) kevents[i].udata;
