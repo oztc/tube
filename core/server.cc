@@ -17,6 +17,10 @@ using namespace pipeserv::utils;
 
 namespace pipeserv {
 
+const size_t Server::kDefaultReadStageCount = 1;
+const size_t Server::kDefaultWriteStageCount = 2;
+const size_t Server::kDefaultTimeout = 0;
+
 static struct addrinfo*
 lookup_addr(const char* host, const char* service)
 {
@@ -33,6 +37,9 @@ lookup_addr(const char* host, const char* service)
 }
 
 Server::Server(const char* host, const char* service) throw()
+    : read_stage_cnt_(kDefaultReadStageCount),
+      write_stage_cnt_(kDefaultWriteStageCount),
+      timeout_(kDefaultTimeout)
 {
     struct addrinfo* info = lookup_addr(host, service);
     bool done = false;
@@ -58,7 +65,7 @@ Server::Server(const char* host, const char* service) throw()
     }
 
     read_stage_ = new PollInStage();
-    out_stage_ = new WriteBackStage();
+    write_stage_ = new WriteBackStage();
     recycle_stage_ = new RecycleStage();
 
 }
@@ -66,7 +73,7 @@ Server::Server(const char* host, const char* service) throw()
 Server::~Server()
 {
     delete read_stage_;
-    delete out_stage_;
+    delete write_stage_;
     delete recycle_stage_;
 
     shutdown(fd_, SHUT_RDWR);
@@ -77,13 +84,15 @@ void
 Server::initialize_stages()
 {
     read_stage_->initialize();
-    out_stage_->initialize();
+    write_stage_->initialize();
     recycle_stage_->initialize();
 
     recycle_stage_->start_thread();
-    for (int i = 0; i < 1; i++) {
+    for (int i = 0; i < read_stage_cnt_; i++) {
         read_stage_->start_thread();
-        out_stage_->start_thread();
+    }
+    for (int i = 0; i < write_stage_cnt_; i++) {
+        write_stage_->start_thread();
     }
 }
 
@@ -114,6 +123,7 @@ Server::main_loop()
         conn->fd = client_fd;
         conn->prio = 0;
         conn->inactive = false;
+        conn->set_timeout(timeout_);
         utils::set_socket_blocking(conn->fd, false);
 
         LOG(INFO, "accepted connection from %s",
@@ -123,3 +133,4 @@ Server::main_loop()
 }
 
 }
+

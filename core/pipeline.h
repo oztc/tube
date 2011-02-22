@@ -40,6 +40,10 @@ struct Connection
     void unlock();
 
     std::string address_string() const;
+
+    void set_read_timeout(int sec);
+    void set_write_timeout(int sec);
+    void set_timeout(int sec);
 };
 
 class Scheduler : utils::Noncopyable

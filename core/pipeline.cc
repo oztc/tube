@@ -9,7 +9,9 @@ bool
 Connection::trylock()
 {
     if (mutex.try_lock()) {
+#ifdef TRACK_OWNER
         owner = utils::get_thread_id();
+#endif
         return true;
     }
     return false;
@@ -19,13 +21,17 @@ void
 Connection::lock()
 {
     mutex.lock();
+#ifdef TRACK_OWNER
     owner = utils::get_thread_id();
+#endif
 }
 
 void
 Connection::unlock()
 {
+#ifdef TRACK_OWNER
     owner = -1;
+#endif
     mutex.unlock();
 }
 
@@ -33,6 +39,37 @@ std::string
 Connection::address_string() const
 {
     return address.address_string();
+}
+
+void
+Connection::set_read_timeout(int sec)
+{
+    struct timeval tv;
+    tv.tv_sec = sec;
+    tv.tv_usec = 0;
+    if (setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv,
+                   sizeof(struct timeval)) < 0) {
+        LOG(WARNING, "cannot set receive timeout for fd %d", fd);
+    }
+}
+
+void
+Connection::set_write_timeout(int sec)
+{
+    struct timeval tv;
+    tv.tv_sec = sec;
+    tv.tv_usec = 0;
+    if (setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &tv,
+                   sizeof(struct timeval)) < 0) {
+        LOG(WARNING, "Cannot set send timeout for fd %d", fd);
+    }
+}
+
+void
+Connection::set_timeout(int sec)
+{
+    set_read_timeout(sec);
+    set_write_timeout(sec);
 }
 
 Scheduler::Scheduler()
