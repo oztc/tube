@@ -35,6 +35,8 @@ struct Connection
 
     // locks
     utils::Mutex mutex;
+    long         owner;
+
 
     bool trylock();
     void lock();
@@ -79,6 +81,9 @@ public:
     virtual void        add_task(Connection* conn);
     virtual Connection* pick_task();
     virtual void        remove_task(Connection* conn);
+private:
+    Connection* pick_task_nolock_connection();
+    Connection* pick_task_lock_connection();
 };
 
 class Stage;

@@ -11,7 +11,21 @@ namespace pipeserv {
 
 typedef uint8_t byte;
 
-class Buffer
+class Readable
+{
+public:
+    virtual ~Readable() {}
+    virtual int read_from_fd(int fd) = 0;
+};
+
+class Writeable
+{
+public:
+    virtual ~Writeable() {}
+    virtual int write_to_fd(int fd) = 0;
+};
+
+class Buffer : public Readable, public Writeable
 {
     static const size_t kPageSize;
 public:
@@ -19,12 +33,13 @@ public:
     typedef PageList::iterator PageIterator;
 
     Buffer();
+    Buffer(const Buffer& rhs);
     virtual ~Buffer();
 
     size_t size() const { return size_; }
 
-    int read_from_fd(int fd);
-    int write_to_fd(int fd);
+    virtual int read_from_fd(int fd);
+    virtual int write_to_fd(int fd);
 
     void append(const byte* ptr, size_t sz);
     bool copy_front(byte* ptr, size_t sz);

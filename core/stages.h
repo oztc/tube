@@ -16,6 +16,7 @@ class Stage
 {
 protected:
     Scheduler* sched_;
+    Pipeline&  pipeline_;
 protected:
     Stage(std::string name);
     virtual ~Stage() {}

@@ -15,9 +15,10 @@ using namespace pipeserv::utils;
 namespace pipeserv {
 
 Stage::Stage(std::string name)
+    : pipeline_(Pipeline::instance())
 {
     LOG(INFO, "adding %s stage to pipeline", name.c_str());
-    Pipeline::instance().add_stage(name, this);
+    pipeline_.add_stage(name, this);
 }
 
 bool
@@ -159,7 +160,6 @@ PollInStage::cleanup_connection(Connection* conn)
 {
     assert(conn);
 
-    //fprintf(stderr, "%d cleanup %d\n", utils::get_thread_id(), conn->fd);
     shutdown(conn->fd, SHUT_RDWR);
     conn->inactive = true;
     sched_remove(conn);
@@ -173,7 +173,10 @@ PollInStage::read_connection(Connection* conn)
 
     if (!conn->trylock()) // avoid lock contention
         return;
-    int nread = conn->in_buf.read_from_fd(conn->fd);
+    int nread;
+    do {
+        nread = conn->in_buf.read_from_fd(conn->fd);
+    } while (nread > 0);
     conn->unlock();
 
     if (nread < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
