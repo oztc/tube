@@ -104,13 +104,8 @@ class Pipeline : utils::Noncopyable
     Stage*             poll_in_stage_;
     ConnectionFactory* factory_;
 
-    Pipeline() {
-        factory_ = new ConnectionFactory();
-    }
-
-    ~Pipeline() {
-        delete factory_;
-    }
+    Pipeline();
+    ~Pipeline();
 
 public:
     static Pipeline& instance() {
@@ -122,19 +117,9 @@ public:
 
     void add_stage(std::string name, Stage* stage);
 
-    void set_connection_factory(ConnectionFactory* fac) {
-        delete factory_;
-        factory_ = fac;
-    }
+    void set_connection_factory(ConnectionFactory* fac);
 
-    Stage* find_stage(std::string name) {
-        StageMap::iterator it = map_.find(name);
-        if (it == map_.end()) {
-            return NULL;
-        } else {
-            return it->second;
-        }
-    }
+    Stage* find_stage(std::string name);
 
     Connection* create_connection();
     void dispose_connection(Connection* conn);

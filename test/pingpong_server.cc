@@ -37,7 +37,6 @@ public:
     PingPongServer() : Server("0.0.0.0", "7000") {
         utils::set_fdtable_size(20000);
         utils::logger.set_level(DEBUG);
-        set_timeout(4);
 
         parser_stage_ = new PingPongParser();
         parser_stage_->initialize();

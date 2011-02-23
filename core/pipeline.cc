@@ -196,6 +196,34 @@ ConnectionFactory::destroy_connection(Connection* conn)
     delete conn;
 }
 
+Pipeline::Pipeline()
+{
+    factory_ = new ConnectionFactory();
+}
+
+Pipeline::~Pipeline()
+{
+    delete factory_;
+}
+
+void
+Pipeline::set_connection_factory(ConnectionFactory* fac)
+{
+    delete factory_;
+    factory_ = fac;
+}
+
+Stage*
+Pipeline::find_stage(std::string name)
+{
+    StageMap::iterator it = map_.find(name);
+    if (it == map_.end()) {
+        return NULL;
+    } else {
+        return it->second;
+    }
+}
+
 Connection*
 Pipeline::create_connection()
 {

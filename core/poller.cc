@@ -10,6 +10,35 @@ Poller::Poller() throw()
 }
 
 bool
+Poller::has_fd(int fd) const
+{
+    if (fds_.find(fd) == fds_.end())
+        return false;
+    return true;
+}
+
+Connection*
+Poller::find_connection(int fd)
+{
+    FDMap::iterator it = fds_.find(fd);
+    if (it == fds_.end())
+        return NULL;
+    return it->second;
+}
+
+bool
+Poller::add_fd_set(int fd, Connection* conn)
+{
+    return fds_.insert(std::make_pair(fd, conn)).second;
+}
+
+bool
+Poller::remove_fd_set(int fd)
+{
+    return fds_.erase(fd);
+}
+
+bool
 Poller::add_fd(int fd, Connection* conn, PollerEvent evt)
 {
     if (add_fd_set(fd, conn)) {

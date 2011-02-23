@@ -31,34 +31,13 @@ public:
     Poller() throw();
     virtual ~Poller() {}
 
-    void set_event_handler(const EventCallback& cb) {
-        handler_ = cb;
-    }
+    void set_event_handler(const EventCallback& cb) { handler_ = cb; }
+    void set_pre_handler(const PollerCallback& cb) { pre_handler_ = cb; }
+    void set_post_handler(const PollerCallback& cb) { post_handler_ = cb; }
 
-    void set_pre_handler(const PollerCallback& cb) {
-        pre_handler_ = cb;
-    }
-
-    void set_post_handler(const PollerCallback& cb) {
-        post_handler_ = cb;
-    }
-
-    size_t size() {
-        return fds_.size();
-    }
-
-    bool has_fd(int fd) const {
-        if (fds_.find(fd) == fds_.end())
-            return false;
-        return true;
-    }
-
-    Connection* find_connection(int fd) {
-        FDMap::iterator it = fds_.find(fd);
-        if (it == fds_.end())
-            return NULL;
-        return it->second;
-    }
+    size_t size() const { return fds_.size(); }
+    bool has_fd(int fd) const;
+    Connection* find_connection(int fd);
 
     FDMap::iterator begin() { return fds_.begin(); }
     FDMap::iterator end() { return fds_.end(); }
@@ -76,13 +55,8 @@ protected:
     // handler before or after events processed
     PollerCallback pre_handler_, post_handler_;
 protected:
-    bool add_fd_set(int fd, Connection* conn) {
-        return fds_.insert(std::make_pair(fd, conn)).second;
-    }
-
-    bool remove_fd_set(int fd) {
-        return fds_.erase(fd);
-    }
+    bool add_fd_set(int fd, Connection* conn);
+    bool remove_fd_set(int fd);
 };
 
 class PollerFactory : public utils::Noncopyable

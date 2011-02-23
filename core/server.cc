@@ -19,7 +19,6 @@ namespace pipeserv {
 
 const size_t Server::kDefaultReadStageCount = 1;
 const size_t Server::kDefaultWriteStageCount = 2;
-const size_t Server::kDefaultTimeout = 0;
 
 static struct addrinfo*
 lookup_addr(const char* host, const char* service)
@@ -38,8 +37,7 @@ lookup_addr(const char* host, const char* service)
 
 Server::Server(const char* host, const char* service) throw()
     : read_stage_cnt_(kDefaultReadStageCount),
-      write_stage_cnt_(kDefaultWriteStageCount),
-      timeout_(kDefaultTimeout)
+      write_stage_cnt_(kDefaultWriteStageCount)
 {
     struct addrinfo* info = lookup_addr(host, service);
     bool done = false;
