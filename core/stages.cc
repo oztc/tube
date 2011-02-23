@@ -15,10 +15,9 @@ using namespace pipeserv::utils;
 namespace pipeserv {
 
 Stage::Stage(std::string name)
-    : pipeline_(Pipeline::instance())
 {
     LOG(INFO, "adding %s stage to pipeline", name.c_str());
-    pipeline_.add_stage(name, this);
+    Pipeline::instance().add_stage(name, this);
 }
 
 bool
@@ -55,11 +54,47 @@ Stage::start_thread()
     Thread th(boost::bind(&Stage::main_loop, this));
 }
 
-PollInStage::PollInStage(int max_event)
+IdleScanner::IdleScanner(int scan_timeout, PollInStage& stage)
+    : scan_timeout_(scan_timeout), stage_(stage)
+{
+    last_scan_time_ = time(NULL);
+}
+
+void
+IdleScanner::scan_idle_connection(Poller& poller)
+{
+    uint32_t current_time = time(NULL);
+    if (current_time - last_scan_time_ < scan_timeout_) {
+        return;
+    }
+    std::vector<Connection*> timeout_connections;
+    for (Poller::FDMap::iterator it = poller.begin(); it != poller.end();
+         ++it) {
+        Connection* conn =  it->second;
+        // on most architecture, accessing two words should be atomic.
+        if (conn->timeout <= 0)
+            continue;
+        if (current_time - conn->last_active > conn->timeout) {
+            timeout_connections.push_back(conn);
+        }
+    }
+    for (int i = 0; i < timeout_connections.size(); i++) {
+         // timeout: this connection has been idle for a long time.
+        Connection* conn = timeout_connections[i];
+        LOG(INFO, "connection %d has timeout", conn->fd);
+        stage_.cleanup_connection(conn);
+    }
+
+    last_scan_time_ = current_time;
+}
+
+int PollInStage::kDefaultTimeout = 10;
+
+PollInStage::PollInStage()
     : Stage("poll_in")
 {
     sched_ = NULL; // no scheduler, need to override ``sched_add``
-    timeout_ = 10; // 10s by default
+    timeout_ = kDefaultTimeout; // 10s by default
     poller_name_ = PollerFactory::instance().default_poller_name();
 }
 
@@ -124,6 +159,7 @@ PollInStage::cleanup_connection(Connection* conn)
 {
     assert(conn);
 
+    //fprintf(stderr, "%d cleanup %d\n", utils::get_thread_id(), conn->fd);
     shutdown(conn->fd, SHUT_RDWR);
     conn->inactive = true;
     sched_remove(conn);
@@ -137,10 +173,7 @@ PollInStage::read_connection(Connection* conn)
 
     if (!conn->trylock()) // avoid lock contention
         return;
-    int nread;
-    do {
-        nread = conn->in_buf.read_from_fd(conn->fd);
-    } while (nread > 0);
+    int nread = conn->in_buf.read_from_fd(conn->fd);
     conn->unlock();
 
     if (nread < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
@@ -164,11 +197,17 @@ void
 PollInStage::main_loop()
 {
     Poller* poller = PollerFactory::instance().create_poller(poller_name_);
-    Poller::PollerCallback func = boost::bind(&PollInStage::handle_connection,
-                                              this, _1, _2);
-    poller->set_handler(func);
+    IdleScanner idle_scanner(timeout_, *this);
+    Poller::EventCallback evthdl =
+        boost::bind(&PollInStage::handle_connection, this, _1, _2);
+    Poller::PollerCallback posthdl =
+        boost::bind(&IdleScanner::scan_idle_connection, &idle_scanner, _1);
+
+    poller->set_post_handler(posthdl);
+    poller->set_event_handler(evthdl);
     add_poll(poller);
     poller->handle_event(timeout_);
+    delete poller;
 }
 
 WriteBackStage::WriteBackStage()

@@ -61,45 +61,35 @@ build_poller_event(short filter, u_short events)
 }
 
 bool
-KqueuePoller::add_fd(int fd, Connection* conn, PollerEvent evt)
+KqueuePoller::poll_add_fd(int fd, Connection* conn, PollerEvent evt)
 {
-    if (add_fd_set(fd)) {
-        struct kevent kqueue_event;
-        struct timespec zero;
-        EV_SET(&kqueue_event, fd, build_kqueue_filter(evt), EV_ADD | EV_ENABLE,
-               0, 0, conn);
-        memset(&zero, 0, sizeof(timespec));
-        if (kevent(kqueue_, &kqueue_event, 1, NULL, 0, &zero) < 0) {
-            LOG(WARNING, "add to kqueue failed, remove fd %d", fd);
-            remove_fd_set(fd);
-            goto failed;
-        }
-        return true;
+    struct kevent kqueue_event;
+    struct timespec zero;
+    EV_SET(&kqueue_event, fd, build_kqueue_filter(evt), EV_ADD | EV_ENABLE,
+           0, 0, conn);
+    memset(&zero, 0, sizeof(timespec));
+    if (kevent(kqueue_, &kqueue_event, 1, NULL, 0, &zero) < 0) {
+        LOG(WARNING, "add to kqueue failed, remove fd %d", fd);
+        return false;
     }
-failed:
-    return false;
+    return true;
 }
 
 bool
-KqueuePoller::remove_fd(int fd)
+KqueuePoller::poll_remove_fd(int fd)
 {
-    if (remove_fd_set(fd)) {
-        struct kevent kqueue_event;
-        struct timespec zero;
-        EV_SET(&kqueue_event, fd, EVFILT_READ |  EVFILT_WRITE ,
-               EV_DELETE | EV_DISABLE, 0, 0, NULL);
-        memset(&zero, 0, sizeof(timespec));
-        if (kevent(kqueue_, &kqueue_event, 1, NULL, 0, &zero) < 0) {
-            if (errno != ENOENT) {
-                LOG(WARNING, "remove from kqueue failed, re-add fd %d", fd);
-                add_fd_set(fd);
-            }
-            goto failed;
+    struct kevent kqueue_event;
+    struct timespec zero;
+    EV_SET(&kqueue_event, fd, EVFILT_READ |  EVFILT_WRITE ,
+           EV_DELETE | EV_DISABLE, 0, 0, NULL);
+    memset(&zero, 0, sizeof(timespec));
+    if (kevent(kqueue_, &kqueue_event, 1, NULL, 0, &zero) < 0) {
+        if (errno != ENOENT) {
+            LOG(WARNING, "remove from kqueue failed, re-add fd %d", fd);
+            return false;
         }
-        return true;
     }
-failed:
-    return false;
+    return true;
 }
 
 #define MAX_EVENT_PER_KEVENT 4096
@@ -117,13 +107,20 @@ KqueuePoller::handle_event(int timeout) throw ()
         int nfds = ::kevent(kqueue_, NULL, 0, kevents, MAX_EVENT_PER_KEVENT,
                             &tspec);
         if (nfds < 0) {
-            LOG(WARNING, "error whene kevent: %s", strerror(errno));
+            free(kevents);
+            throw utils::SyscallException();
         }
-        for (int i = 0; i < nfds; i++) {
-            conn = (Connection*) kevents[i].udata;
-            handler_(conn, build_poller_event(kevents[i].filter,
-                                              kevents[i].flags));
+        if (!pre_handler_.empty())
+            pre_handler_(*this);
+        if (!handler_.empty()) {
+            for (int i = 0; i < nfds; i++) {
+                conn = (Connection*) kevents[i].udata;
+                handler_(conn, build_poller_event(kevents[i].filter,
+                                                  kevents[i].flags));
+            }
         }
+        if (!post_handler_.empty())
+            post_handler_(*this);
     }
     free(kevents);
 }

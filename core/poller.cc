@@ -9,6 +9,36 @@ Poller::Poller() throw()
     fds_.set_deleted_key(INT_MAX);
 }
 
+bool
+Poller::add_fd(int fd, Connection* conn, PollerEvent evt)
+{
+    if (add_fd_set(fd, conn)) {
+        if (!poll_add_fd(fd, conn, evt)) {
+            remove_fd_set(fd);
+            goto failed;
+        }
+        return true;
+    }
+failed:
+    return false;
+}
+
+bool
+Poller::remove_fd(int fd)
+{
+    Connection* conn = find_connection(fd);
+    if (conn) {
+        remove_fd_set(fd);
+        if (!poll_remove_fd(fd)) {
+            add_fd_set(fd, conn);
+            goto failed;
+        }
+        return true;
+    }
+failed:
+    return false;
+}
+
 void
 PollerFactory::register_poller(const char* name, CreateFunc create_func)
 {

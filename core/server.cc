@@ -61,6 +61,8 @@ Server::Server(const char* host, const char* service) throw()
         err += service;
         err += " on host ";
         err += host;
+        err += " error code: ";
+        err += strerror(errno);
         throw std::invalid_argument(err);
     }
 
@@ -123,7 +125,6 @@ Server::main_loop()
         conn->fd = client_fd;
         conn->prio = 0;
         conn->inactive = false;
-        conn->set_timeout(timeout_);
         utils::set_socket_blocking(conn->fd, false);
 
         LOG(INFO, "accepted connection from %s",

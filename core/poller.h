@@ -4,7 +4,7 @@
 #define _POLLER_H_
 
 #include <string>
-#include <google/dense_hash_set>
+#include <google/dense_hash_map>
 #include <map>
 #include <boost/function.hpp>
 
@@ -24,13 +24,23 @@ static const PollerEvent POLLER_EVENT_HUP   = 8;
 class Poller : public utils::Noncopyable
 {
 public:
-    typedef boost::function<void (Connection*, PollerEvent)> PollerCallback;
+    typedef boost::function<void (Connection*, PollerEvent)> EventCallback;
+    typedef boost::function<void (Poller&)> PollerCallback;
+    typedef google::dense_hash_map<int, Connection*> FDMap;
 
     Poller() throw();
     virtual ~Poller() {}
 
-    void set_handler(const PollerCallback& cb) {
+    void set_event_handler(const EventCallback& cb) {
         handler_ = cb;
+    }
+
+    void set_pre_handler(const PollerCallback& cb) {
+        pre_handler_ = cb;
+    }
+
+    void set_post_handler(const PollerCallback& cb) {
+        post_handler_ = cb;
     }
 
     size_t size() {
@@ -43,18 +53,31 @@ public:
         return true;
     }
 
-    virtual void handle_event(int timeout) throw() = 0;
-    virtual bool add_fd(int fd, Connection* conn, PollerEvent evt) = 0;
-    virtual bool remove_fd(int fd) = 0;
-protected:
-    typedef google::dense_hash_set<int> FDSet;
+    Connection* find_connection(int fd) {
+        FDMap::iterator it = fds_.find(fd);
+        if (it == fds_.end())
+            return NULL;
+        return it->second;
+    }
 
-    FDSet          fds_;
-    // handler when events happened
-    PollerCallback handler_;
+    FDMap::iterator begin() { return fds_.begin(); }
+    FDMap::iterator end() { return fds_.end(); }
+
+    virtual void handle_event(int timeout) throw() = 0;
+    virtual bool poll_add_fd(int fd, Connection* conn, PollerEvent evt) = 0;
+    virtual bool poll_remove_fd(int fd) = 0;
+
+    bool add_fd(int fd, Connection* conn, PollerEvent evt);
+    bool remove_fd(int fd);
 protected:
-    bool add_fd_set(int fd) {
-        return fds_.insert(fd).second;
+    FDMap          fds_;
+    // handler when events happened
+    EventCallback  handler_;
+    // handler before or after events processed
+    PollerCallback pre_handler_, post_handler_;
+protected:
+    bool add_fd_set(int fd, Connection* conn) {
+        return fds_.insert(std::make_pair(fd, conn)).second;
     }
 
     bool remove_fd_set(int fd) {

@@ -22,8 +22,8 @@ public:
     virtual ~EpollPoller();
 
     virtual void handle_event(int timeout) throw();
-    virtual bool add_fd(int fd, Connection* conn, PollerEvent evt);
-    virtual bool remove_fd(int fd);
+    virtual bool poll_add_fd(int fd, Connection* conn, PollerEvent evt);
+    virtual bool poll_remove_fd(int fd);
 };
 
 EpollPoller::EpollPoller() throw()
@@ -63,42 +63,32 @@ build_poller_event(int events)
 }
 
 bool
-EpollPoller::add_fd(int fd, Connection* conn, PollerEvent evt)
+EpollPoller::poll_add_fd(int fd, Connection* conn, PollerEvent evt)
 {
-    if (add_fd_set(fd)) {
-        struct epoll_event epoll_evt;
-        epoll_evt.events = build_epoll_event(evt);
-        epoll_evt.data.ptr = conn;
-        if (epoll_ctl(epoll_fd_, EPOLL_CTL_ADD, fd, &epoll_evt) < 0) {
-            if (errno != EEXIST) {
-                // fd is not watched
-                LOG(WARNING, "add to epoll failed, remove fd %d", fd);
-                remove_fd_set(fd);
-            }
-            goto failed;
+    struct epoll_event epoll_evt;
+    epoll_evt.events = build_epoll_event(evt);
+    epoll_evt.data.ptr = conn;
+    if (epoll_ctl(epoll_fd_, EPOLL_CTL_ADD, fd, &epoll_evt) < 0) {
+        if (errno != EEXIST) {
+            // fd is not watched
+            LOG(WARNING, "add to epoll failed, remove fd %d", fd);
+            return false;
         }
-        return true;
     }
-failed:
-    return false;
+    return true;
 }
 
 bool
-EpollPoller::remove_fd(int fd)
+EpollPoller::poll_remove_fd(int fd)
 {
-    if (remove_fd_set(fd)) {
-        if (epoll_ctl(epoll_fd_, EPOLL_CTL_DEL, fd, NULL) < 0) {
-            if (errno != ENOENT) {
-                // fd is watched
-                LOG(WARNING, "remove from epoll failed, re-add the fd %d", fd);
-                add_fd_set(fd);
-            }
-            goto failed;
+    if (epoll_ctl(epoll_fd_, EPOLL_CTL_DEL, fd, NULL) < 0) {
+        if (errno != ENOENT) {
+            // fd is watched
+            LOG(WARNING, "remove from epoll failed, re-add the fd %d", fd);
+            return false;
         }
-        return true;
     }
-failed:
-    return false;
+    return true;
 }
 
 #define MAX_EVENT_PER_POLL 4096
@@ -113,13 +103,19 @@ EpollPoller::handle_event(int timeout) throw()
         int nfds = epoll_wait(epoll_fd_, epoll_evt, MAX_EVENT_PER_POLL,
                               timeout * 1000);
         if (nfds < 0) {
-            LOG(WARNING, "error in epoll_wait: %s", strerror(errno));
-            continue;
+            free(epoll_evt);
+            throw utils::SyscallException();
         }
-        for (int i = 0; i < nfds; i++) {
-            conn = (Connection*) epoll_evt[i].data.ptr;
-            handler_(conn, build_poller_event(epoll_evt[i].events));
+        if (!pre_handler_.empty())
+            pre_handler_(*this);
+        if (!handler_.empty()) {
+            for (int i = 0; i < nfds; i++) {
+                conn = (Connection*) epoll_evt[i].data.ptr;
+                handler_(conn, build_poller_event(epoll_evt[i].events));
+            }
         }
+        if (!post_handler_.empty())
+            post_handler_(*this);
     }
     free(epoll_evt);
 }

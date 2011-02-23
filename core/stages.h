@@ -16,7 +16,6 @@ class Stage
 {
 protected:
     Scheduler* sched_;
-    Pipeline&  pipeline_;
 protected:
     Stage(std::string name);
     virtual ~Stage() {}
@@ -39,13 +38,14 @@ class PollInStage : public Stage
     std::vector<Poller*> pollers_;
 
     std::string poller_name_;
-    int max_event_;
     int timeout_;
 
     Stage* parser_stage_;
     Stage* recycle_stage_;
 public:
-    PollInStage(int max_event = 1024);
+    static int kDefaultTimeout;
+
+    PollInStage();
     ~PollInStage();
 
     int timeout() const { return timeout_; }
@@ -57,6 +57,8 @@ public:
     virtual void initialize();
     virtual void main_loop();
 
+friend class IdleScanner;
+
 private:
     void add_poll(Poller* poller);
     void read_connection(Connection* conn);
@@ -64,6 +66,15 @@ private:
     void handle_connection(Connection* conn, PollerEvent evt);
 };
 
+class IdleScanner
+{
+    uint32_t last_scan_time_;
+    int      scan_timeout_;
+    PollInStage& stage_;
+public:
+    IdleScanner(int scan_timeout, PollInStage& stage);
+    void scan_idle_connection(Poller& poller);
+};
 
 class WriteBackStage : public Stage
 {

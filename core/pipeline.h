@@ -20,6 +20,9 @@ namespace pipeserv {
 
 struct Connection
 {
+    volatile uint32_t last_active;
+    volatile uint32_t timeout;
+
     int       fd;
     int       prio;
     bool      inactive;
@@ -32,18 +35,15 @@ struct Connection
 
     // locks
     utils::Mutex mutex;
-    long         owner;
-
 
     bool trylock();
     void lock();
     void unlock();
 
     std::string address_string() const;
+    void set_timeout(int sec) { timeout = sec; }
 
-    void set_read_timeout(int sec);
-    void set_write_timeout(int sec);
-    void set_timeout(int sec);
+    Connection();
 };
 
 class Scheduler : utils::Noncopyable
@@ -79,9 +79,6 @@ public:
     virtual void        add_task(Connection* conn);
     virtual Connection* pick_task();
     virtual void        remove_task(Connection* conn);
-private:
-    Connection* pick_task_nolock_connection();
-    Connection* pick_task_lock_connection();
 };
 
 class Stage;

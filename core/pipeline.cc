@@ -1,9 +1,20 @@
+#include <ctime>
+#include <unistd.h>
+
 #include "core/pipeline.h"
 #include "core/stages.h"
 #include "utils/logger.h"
 #include "utils/misc.h"
 
 namespace pipeserv {
+
+Connection::Connection()
+{
+    timeout = 0; // default no timeout
+    prio = 0;
+    inactive = false;
+    last_active = time(NULL);
+}
 
 bool
 Connection::trylock()
@@ -41,37 +52,6 @@ Connection::address_string() const
     return address.address_string();
 }
 
-void
-Connection::set_read_timeout(int sec)
-{
-    struct timeval tv;
-    tv.tv_sec = sec;
-    tv.tv_usec = 0;
-    if (setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv,
-                   sizeof(struct timeval)) < 0) {
-        LOG(WARNING, "cannot set receive timeout for fd %d", fd);
-    }
-}
-
-void
-Connection::set_write_timeout(int sec)
-{
-    struct timeval tv;
-    tv.tv_sec = sec;
-    tv.tv_usec = 0;
-    if (setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &tv,
-                   sizeof(struct timeval)) < 0) {
-        LOG(WARNING, "Cannot set send timeout for fd %d", fd);
-    }
-}
-
-void
-Connection::set_timeout(int sec)
-{
-    set_read_timeout(sec);
-    set_write_timeout(sec);
-}
-
 Scheduler::Scheduler()
 {
 
@@ -98,8 +78,6 @@ QueueScheduler::add_task(Connection* conn)
         NodeList::iterator node = it->second;
         list_.erase(node);
         list_.push_front(conn);
-        nodes_.erase(it);
-        nodes_.insert(std::make_pair(conn, list_.begin()));
         return;
     }
     bool need_notify = (list_.size() == 0);
@@ -109,7 +87,7 @@ QueueScheduler::add_task(Connection* conn)
 
     lk.unlock();
     if (need_notify) {
-        cond_.notify_all();
+        cond_.notify_one();
     }
 }
 
@@ -137,51 +115,28 @@ public:
 };
 
 Connection*
-QueueScheduler::pick_task_nolock_connection()
-{
-    utils::Lock lk(mutex_);
-    while (list_.empty()) {
-        cond_.wait(lk);
-    }
-    Connection* conn = list_.front();
-    list_.pop_front();
-    nodes_.erase(conn);
-    return conn;
-}
-
-Connection*
-QueueScheduler::pick_task_lock_connection()
+QueueScheduler::pick_task()
 {
     QueueSchedulerPickScope lk(mutex_);
     while (list_.empty()) {
         cond_.wait(lk);
     }
-
     size_t len = list_.size();
     Connection* conn = NULL;
     for (NodeList::iterator it = list_.begin(); it != list_.end(); ++it) {
         conn = *it;
-        if (conn->trylock()) {
+        if (supress_connection_lock_ || conn->trylock()) {
             list_.erase(it);
             nodes_.erase(conn);
             return conn;
         }
     }
     conn = list_.front();
-    conn->lock();
+    if (!supress_connection_lock_)
+        conn->lock();
     list_.pop_front();
     nodes_.erase(conn);
     return conn;
-}
-
-Connection*
-QueueScheduler::pick_task()
-{
-    if (supress_connection_lock_) {
-        return pick_task_nolock_connection();
-    } else {
-        return pick_task_lock_connection();
-    }
 }
 
 void
@@ -237,7 +192,7 @@ Pipeline::dispose_connection(Connection* conn)
         }
         ++it;
     }
-    close(conn->fd);
+    ::close(conn->fd);
     conn->unlock();
     factory_->destroy_connection(conn);
     LOG(DEBUG, "disposed");

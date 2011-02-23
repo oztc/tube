@@ -4,7 +4,6 @@
 
 #include "core/buffer.h"
 #include "utils/exception.h"
-#include "utils/logger.h"
 
 using namespace pipeserv::utils;
 
@@ -23,19 +22,6 @@ Buffer::Buffer()
     right_offset_ = kPageSize;
 }
 
-Buffer::Buffer(const Buffer& rhs)
-    : left_offset_(rhs.left_offset_), right_offset_(rhs.right_offset_),
-      size_(rhs.size_)
-{
-    extra_page_ = ALLOC_PAGE();
-    for (PageList::const_iterator it = rhs.pages_.begin();
-         it != rhs.pages_.end(); ++it) {
-        byte* page_data = ALLOC_PAGE();
-        memcpy(page_data, *it, kPageSize);
-        pages_.push_back(page_data);
-    }
-}
-
 Buffer::~Buffer()
 {
     free(extra_page_);
@@ -47,23 +33,25 @@ Buffer::~Buffer()
 int
 Buffer::read_from_fd(int fd)
 {
+    byte* last_page = pages_.back();
+    size_t last_offset = kPageSize - right_offset_;
     struct iovec vec[2];
-    vec[0].iov_base = pages_.back() + kPageSize - right_offset_;
+    int nread = 0;
+
+    vec[0].iov_base = last_page + last_offset;
     vec[0].iov_len = right_offset_;
     vec[1].iov_base = extra_page_;
     vec[1].iov_len = kPageSize;
-    int nread = readv(fd, vec, 2);
-    if (nread < 0)
-        return nread;
-
-    if (right_offset_ <= nread) {
-        right_offset_ = kPageSize + right_offset_ - nread;
-        pages_.push_back(extra_page_);
-        extra_page_ = ALLOC_PAGE();
-    } else {
-        right_offset_ -= nread;
+    while ((nread = readv(fd, vec, 2)) > 0) {
+        if (right_offset_ <= nread) {
+            right_offset_ = kPageSize + right_offset_ - nread;
+            pages_.push_back(extra_page_);
+            extra_page_ = ALLOC_PAGE();
+        } else {
+            right_offset_ -= nread;
+        }
+        size_ += nread;
     }
-    size_ += nread;
     return nread;
 }
 
@@ -73,28 +61,22 @@ Buffer::append(const byte* ptr, size_t sz)
     size_ += sz;
 
     byte* dest = pages_.back() + kPageSize - right_offset_;
-    if (sz < right_offset_) {
-        memcpy(dest, ptr, sz);
-        right_offset_ -= sz;
-        return;
-    }
-    memcpy(dest, ptr, right_offset_);
-    ptr += right_offset_;
-    sz -= right_offset_;
-
+    int ndest = right_offset_;
+    int ncopy = 0;
     while (true) {
-        dest = ALLOC_PAGE();
+        ncopy = MIN(sz, ndest);
+        memcpy(dest, ptr, ncopy);
+        ptr += ncopy;
+        sz -= ncopy;
         if (sz > 0) {
-            memcpy(dest, ptr, MIN(kPageSize, sz));
-        }
-        pages_.push_back(dest);
-        if (sz < kPageSize) {
-            right_offset_ = kPageSize - sz;
+            dest = ALLOC_PAGE();
+            ndest = kPageSize;
+            pages_.push_back(dest);
+        } else {
             break;
         }
-        ptr += kPageSize;
-        sz -= kPageSize;
     }
+    right_offset_ = kPageSize - ncopy - (dest - pages_.back());
 }
 
 bool
