@@ -7,28 +7,32 @@
 #include <stdint.h>
 #include <list>
 
-namespace pipeserv {
+#include <sys/types.h>
+#include <boost/shared_ptr.hpp>
 
-typedef uint8_t byte;
+#include "utils/misc.h"
+
+namespace pipeserv {
 
 class Readable
 {
 public:
     virtual ~Readable() {}
-    virtual int read_from_fd(int fd) = 0;
+    virtual ssize_t read_from_fd(int fd) = 0;
 };
 
 class Writeable
 {
 public:
     virtual ~Writeable() {}
-    virtual int write_to_fd(int fd) = 0;
+    virtual ssize_t write_to_fd(int fd) = 0;
 };
 
 class Buffer : public Readable, public Writeable
 {
-    static const size_t kPageSize;
 public:
+    static const size_t kPageSize;
+
     typedef std::list<byte*> PageList;
     typedef PageList::iterator PageIterator;
 
@@ -36,10 +40,12 @@ public:
     Buffer(const Buffer& rhs);
     virtual ~Buffer();
 
+    Buffer& operator=(const Buffer& rhs);
+
     size_t size() const { return size_; }
 
-    virtual int read_from_fd(int fd);
-    virtual int write_to_fd(int fd);
+    virtual ssize_t read_from_fd(int fd);
+    virtual ssize_t write_to_fd(int fd);
 
     void append(const byte* ptr, size_t sz);
     bool copy_front(byte* ptr, size_t sz);
@@ -47,17 +53,32 @@ public:
     int  pop_page();
     void clear();
 
-    PageIterator page_begin() { return pages_.begin(); }
-    PageIterator page_end() { return pages_.end(); }
+    PageIterator page_begin() { return cow_info_->pages_.begin(); }
+    PageIterator page_end() { return cow_info_->pages_.end(); }
 
     // refine page segment according to page start pointer
-    byte* first_page() const { return pages_.front(); }
-    byte* last_page() const { return pages_.back(); }
+    byte* first_page() const { return cow_info_->pages_.front(); }
+    byte* last_page() const { return cow_info_->pages_.back(); }
     byte* get_page_segment(byte* page_start_ptr, size_t* len_ret);
 
 private:
-    byte*    extra_page_;
-    PageList pages_;
+    void copy_for_write();
+    bool need_copy_for_write() const;
+    void new_cow_info();
+
+private:
+    struct CowInfo {
+        CowInfo();
+        ~CowInfo();
+
+        byte*    extra_page_;
+        PageList pages_;
+    };
+
+    typedef boost::shared_ptr<CowInfo> CowInfoPtr;
+
+    CowInfoPtr cow_info_;
+    bool       borrowed_;
 
     size_t   left_offset_, right_offset_;
     size_t   size_;

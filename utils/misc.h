@@ -17,6 +17,9 @@
 #include <boost/noncopyable.hpp>
 
 namespace pipeserv {
+
+typedef uint8_t byte;
+
 namespace utils {
 
 typedef boost::mutex Mutex;
@@ -41,7 +44,6 @@ struct PtrHashFunc
         return (size_t) x;
     }
 };
-
 
 }
 }

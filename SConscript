@@ -58,3 +58,4 @@ def GenTestProg(name, src):
 
 GenTestProg('test/hash_server', 'test/hash_server.cc')
 GenTestProg('test/pingpong_server', 'test/pingpong_server.cc')
+GenTestProg('test/test_buffer', 'test/test_buffer.cc')

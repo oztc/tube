@@ -17,8 +17,9 @@ const size_t Buffer::kPageSize = 8192;
 
 Buffer::Buffer()
 {
-    extra_page_ = ALLOC_PAGE();
-    pages_.push_back(ALLOC_PAGE());
+    cow_info_ = CowInfoPtr(new Buffer::CowInfo());
+    borrowed_ = false;
+    cow_info_->pages_.push_back(ALLOC_PAGE());
     left_offset_ = size_ = 0;
     right_offset_ = kPageSize;
 }
@@ -27,16 +28,28 @@ Buffer::Buffer(const Buffer& rhs)
     : left_offset_(rhs.left_offset_), right_offset_(rhs.right_offset_),
       size_(rhs.size_)
 {
-    extra_page_ = ALLOC_PAGE();
-    for (PageList::const_iterator it = rhs.pages_.begin();
-         it != rhs.pages_.end(); ++it) {
-        byte* page_data = ALLOC_PAGE();
-        memcpy(page_data, *it, kPageSize);
-        pages_.push_back(page_data);
-    }
+    cow_info_ = rhs.cow_info_; // increase the reference
+    borrowed_ = true;
 }
 
-Buffer::~Buffer()
+Buffer&
+Buffer::operator=(const Buffer& rhs)
+{
+    left_offset_ = rhs.left_offset_;
+    right_offset_ = rhs.right_offset_;
+    size_ = rhs.size_;
+
+    cow_info_ = rhs.cow_info_;
+    borrowed_ = true;
+    return *this;
+}
+
+Buffer::CowInfo::CowInfo()
+{
+    extra_page_ = ALLOC_PAGE();
+}
+
+Buffer::CowInfo::~CowInfo()
 {
     free(extra_page_);
     for (PageList::iterator it = pages_.begin(); it != pages_.end(); ++it) {
@@ -44,14 +57,42 @@ Buffer::~Buffer()
     }
 }
 
-int
+void
+Buffer::copy_for_write()
+{
+    // puts("copy for write");
+    CowInfoPtr ptr = cow_info_;
+    cow_info_ = CowInfoPtr(new CowInfo());
+    borrowed_ = false;
+
+    for (PageList::const_iterator it = ptr->pages_.begin();
+         it != ptr->pages_.end(); ++it) {
+        byte* page_data = ALLOC_PAGE();
+        memcpy(page_data, *it, kPageSize);
+        cow_info_->pages_.push_back(page_data);
+    }
+}
+
+bool
+Buffer::need_copy_for_write() const
+{
+    return borrowed_ && cow_info_.use_count() > 1;
+}
+
+Buffer::~Buffer()
+{
+}
+
+ssize_t
 Buffer::read_from_fd(int fd)
 {
     struct iovec vec[2];
+    if (need_copy_for_write())
+        copy_for_write();
 
-    vec[0].iov_base = pages_.back() + kPageSize - right_offset_;
+    vec[0].iov_base = cow_info_->pages_.back() + kPageSize - right_offset_;
     vec[0].iov_len = right_offset_;
-    vec[1].iov_base = extra_page_;
+    vec[1].iov_base = cow_info_->extra_page_;
     vec[1].iov_len = kPageSize;
 
     int nread = readv(fd, vec, 2);
@@ -59,8 +100,8 @@ Buffer::read_from_fd(int fd)
         return nread;
     if (right_offset_ <= nread) {
         right_offset_ = kPageSize + right_offset_ - nread;
-        pages_.push_back(extra_page_);
-        extra_page_ = ALLOC_PAGE();
+        cow_info_->pages_.push_back(cow_info_->extra_page_);
+        cow_info_->extra_page_ = ALLOC_PAGE();
     } else {
         right_offset_ -= nread;
     }
@@ -71,9 +112,12 @@ Buffer::read_from_fd(int fd)
 void
 Buffer::append(const byte* ptr, size_t sz)
 {
+    if (need_copy_for_write())
+        copy_for_write();
+
     size_ += sz;
 
-    byte* dest = pages_.back() + kPageSize - right_offset_;
+    byte* dest = cow_info_->pages_.back() + kPageSize - right_offset_;
     if (sz < right_offset_) {
         memcpy(dest, ptr, sz);
         right_offset_ -= sz;
@@ -85,7 +129,7 @@ Buffer::append(const byte* ptr, size_t sz)
     while (true) {
         dest = ALLOC_PAGE();
         memcpy(dest, ptr, MIN(kPageSize, sz));
-        pages_.push_back(dest);
+        cow_info_->pages_.push_back(dest);
         if (sz < kPageSize) {
             right_offset_ = kPageSize - sz;
             break;
@@ -101,10 +145,10 @@ Buffer::copy_front(byte* ptr, size_t sz)
     if (size_ < sz)
         return false;
 
-    PageIterator it = pages_.begin();
+    PageIterator it = cow_info_->pages_.begin();
     int ncopy = 0;
     do {
-        if (it == pages_.begin()) {
+        if (it == cow_info_->pages_.begin()) {
             ncopy = MIN(sz, kPageSize - left_offset_);
             memcpy(ptr, *it + left_offset_, ncopy);
         } else {
@@ -121,15 +165,18 @@ Buffer::copy_front(byte* ptr, size_t sz)
 bool
 Buffer::pop(size_t pop_size)
 {
+    if (need_copy_for_write())
+        copy_for_write();
+
     if (size_ < pop_size)
         return false;
     div_t res = div(pop_size + left_offset_, kPageSize);
     int npage = res.quot;
     left_offset_ = res.rem;
     for (int i = 0; i < npage; i++) {
-        if (pages_.size() > 1) {
-            free(pages_.front());
-            pages_.pop_front();
+        if (cow_info_->pages_.size() > 1) {
+            free(cow_info_->pages_.front());
+            cow_info_->pages_.pop_front();
         }
     }
     size_ -= pop_size;
@@ -153,15 +200,18 @@ Buffer::clear()
     pop(size_);
 }
 
-int
+ssize_t
 Buffer::write_to_fd(int fd)
 {
+    if (need_copy_for_write())
+        copy_for_write();
+
     if (size_ == 0)
         return 0;
     int nwrite = 0;
     struct iovec vec[2];
-    PageList::iterator it = pages_.begin();
-    int nvec = MIN(2, pages_.size());
+    PageList::iterator it = cow_info_->pages_.begin();
+    int nvec = MIN(2, cow_info_->pages_.size());
     for (int i = 0; i < nvec; i++, ++it) {
         byte* ptr = *it;
         if (i == 0)
@@ -183,11 +233,11 @@ Buffer::get_page_segment(byte* page_start_ptr, size_t* len_ret)
 {
     byte* ptr = page_start_ptr;
     size_t len = kPageSize;
-    if (page_start_ptr == pages_.front()) {
+    if (page_start_ptr == cow_info_->pages_.front()) {
         ptr += left_offset_;
         len -= left_offset_;
     }
-    if (page_start_ptr == pages_.back()) {
+    if (page_start_ptr == cow_info_->pages_.back()) {
         len -= right_offset_;
     }
     if (len_ret) *len_ret = len;
