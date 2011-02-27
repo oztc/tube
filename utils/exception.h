@@ -47,6 +47,19 @@ public:
     }
 };
 
+class FileOpenError : public SyscallException
+{
+    std::string filename_;
+public:
+    FileOpenError(std::string filename)
+        : SyscallException(), filename_(filename) {}
+
+    virtual ~FileOpenError() throw() {}
+
+    std::string filename() const { return filename_; }
+
+};
+
 }
 }
 

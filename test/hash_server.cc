@@ -21,7 +21,7 @@ public:
     }
 
     virtual int process_task(Connection* conn) {
-        Buffer& buf = conn->in_buf;
+        Buffer& buf = conn->in_stream.buffer();
         if (buf.size() < 16)
             return 0;
         char str[32];

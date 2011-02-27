@@ -3,6 +3,10 @@
 #ifndef _WRAPPER_H_
 #define _WRAPPER_H_
 
+#include <sys/types.h>
+#include <unistd.h>
+
+
 #include "pipeline.h"
 
 namespace pipeserv {
@@ -33,15 +37,19 @@ public:
 
 class Response : public Wrapper
 {
-    size_t      buffer_size_;
+    size_t      max_mem_;
     bool        inactive_;
     Stage*      out_stage_;
+    size_t      total_mem_;
 public:
-    Response(Connection* conn, size_t buffer_size = (4 << 20));
+    static size_t kMaxMemorySizes;
+
+    Response(Connection* conn);
     virtual ~Response();
 
     int     response_code() const;
     ssize_t write_data(const byte* ptr, size_t sz);
+    void    write_file(std::string filename, off64_t offset, off64_t length);
     ssize_t flush_data();
     bool    active() const { return !inactive_; }
     void    close();

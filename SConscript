@@ -9,6 +9,8 @@ source = ['utils/logger.cc',
           'core/buffer.cc',
           'core/pipeline.cc',
           'core/inet_address.cc',
+          'core/stream.cc',
+          'core/filesender.cc',
           'core/server.cc',
           'core/stages.cc',
           'core/wrapper.cc']
@@ -26,6 +28,9 @@ if ARGUMENTS.get('release', 0) == '1':
 env = Environment(ENV=os.environ, CFLAGS=cflags, CXXFLAGS=cflags,
                   CPPPATH=inc_path, LIBS=libflags)
 
+def GetOS():
+    return platform.uname()[0]
+
 if not env.GetOption('clean'):
     conf = env.Configure(config_h='config.h')
     if conf.CheckCHeader('sys/epoll.h'):
@@ -34,6 +39,8 @@ if not env.GetOption('clean'):
     if conf.CheckCHeader(['sys/types.h', 'sys/event.h']):
         conf.Define('USE_KQUEUE')
         source += kqueue_source
+    if GetOS() == 'Linux' and conf.CheckCHeader('sys/sendfile.h'):
+        conf.Define('USE_LINUX_SENDFILE')
     env = conf.Finish()
 
 def PassEnv(name, dstname):
@@ -47,9 +54,6 @@ PassEnv('LDFLAGS', 'LINKFLAGS')
 env.VariantDir('build', '.')
 libpipeserv = env.SharedLibrary('pipeserv', source=source)
 
-def GetOS():
-    return platform.uname()[0]
-
 def GenTestProg(name, src):
     ldflags = [libpipeserv]
     if GetOS() == 'Linux':
@@ -59,3 +63,4 @@ def GenTestProg(name, src):
 GenTestProg('test/hash_server', 'test/hash_server.cc')
 GenTestProg('test/pingpong_server', 'test/pingpong_server.cc')
 GenTestProg('test/test_buffer', 'test/test_buffer.cc')
+GenTestProg('test/file_server', 'test/file_server.cc')

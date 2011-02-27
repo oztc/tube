@@ -14,21 +14,18 @@
 
 namespace pipeserv {
 
-class Readable
-{
-public:
-    virtual ~Readable() {}
-    virtual ssize_t read_from_fd(int fd) = 0;
-};
-
 class Writeable
 {
 public:
     virtual ~Writeable() {}
+
     virtual ssize_t write_to_fd(int fd) = 0;
+    virtual size_t  size() const = 0;
+    virtual size_t  memory_usage() const = 0;
+    virtual bool    append(const byte* ptr, size_t size) = 0;
 };
 
-class Buffer : public Readable, public Writeable
+class Buffer : public Writeable
 {
 public:
     static const size_t kPageSize;
@@ -42,12 +39,14 @@ public:
 
     Buffer& operator=(const Buffer& rhs);
 
-    size_t size() const { return size_; }
+    virtual size_t size() const { return size_; }
+    virtual size_t memory_usage() const { return size_; }
 
-    virtual ssize_t read_from_fd(int fd);
+    ssize_t read_from_fd(int fd);
+
     virtual ssize_t write_to_fd(int fd);
+    virtual bool    append(const byte* ptr, size_t sz);
 
-    void append(const byte* ptr, size_t sz);
     bool copy_front(byte* ptr, size_t sz);
     bool pop(size_t pop_size);
     int  pop_page();

@@ -14,7 +14,7 @@ class PingPongParser : public ParserStage
 {
 public:
     virtual int process_task(Connection* conn) {
-        Buffer& buf = conn->in_buf;
+        Buffer& buf = conn->in_stream.buffer();
         Response res(conn);
         size_t len = 0;
         while (true) {

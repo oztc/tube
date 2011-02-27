@@ -12,33 +12,35 @@ Wrapper::Wrapper(Connection* conn)
 Request::Request(Connection* conn)
   : Wrapper(conn)
 {
-    utils::set_socket_blocking(conn->fd, true);
+    disable_poll();
 }
 
 Request::~Request()
 {
-    utils::set_socket_blocking(conn_->fd, false);
+    enable_poll();
 }
 
 ssize_t
 Request::read_data(byte* ptr, size_t sz)
 {
-    Buffer& buf = conn_->in_buf;
+    Buffer& buf = conn_->in_stream.buffer();
     if (buf.size() > 0) {
         size_t len = 0;
         byte* bufptr = buf.get_page_segment(buf.first_page(), &len);
         memcpy(ptr, bufptr, len);
         return buf.pop_page();
     } else {
-        disable_poll();
+        utils::set_socket_blocking(conn_->fd, true);
         ssize_t nread = ::read(conn_->fd, (void*) ptr, sz);
-        enable_poll();
+        utils::set_socket_blocking(conn_->fd, false);
         return nread;
     }
 }
 
-Response::Response(Connection* conn, size_t buffer_size)
-    : Wrapper(conn), buffer_size_(buffer_size), inactive_(false)
+size_t Response::kMaxMemorySizes = (4 << 20);
+
+Response::Response(Connection* conn)
+    : Wrapper(conn), max_mem_(kMaxMemorySizes), inactive_(false)
 {
     out_stage_ = Pipeline::instance().find_stage("write_back");
 }
@@ -53,7 +55,7 @@ Response::~Response()
 int
 Response::response_code() const
 {
-    if (active() && conn_->out_buf.size() > 0)
+    if (active() && !conn_->out_stream.is_done())
         return -1;
     return 0;
 }
@@ -61,32 +63,43 @@ Response::response_code() const
 ssize_t
 Response::write_data(const byte* ptr, size_t sz)
 {
-    Buffer& buf = conn_->out_buf;
+    OutputStream& out = conn_->out_stream;
     ssize_t ret;
-    buf.append(ptr, sz);
+    out.append_data(ptr, sz);
 
-    if (buf.size() > buffer_size_) {
+    if (out.memory_usage() > max_mem_) {
         ret = flush_data();
         if (ret <= 0) return ret;
     }
     return sz;
 }
 
+void
+Response::write_file(std::string filename, off64_t offset, off64_t length)
+{
+    conn_->out_stream.append_file(filename, offset, length);
+}
+
 ssize_t
 Response::flush_data()
 {
-    Buffer& buf = conn_->out_buf;
-    ssize_t ret = buf.size();
+    OutputStream& out = conn_->out_stream;
+    ssize_t nwrite = 0;
     disable_poll();
-    while (buf.size() > 0) {
-        ssize_t rs = buf.write_to_fd(conn_->fd);
-        if (rs <= 0) {
-            return rs;
+    utils::set_socket_blocking(conn_->fd, true);
+    while (true) {
+        ssize_t rs = out.write_into_output();
+        if (rs < 0) {
+            nwrite = rs;
+            break;
+        } else if (rs == 0) {
+            break;
         }
-        buf.pop(rs);
+        nwrite += rs;
     }
+    utils::set_socket_blocking(conn_->fd, false);
     enable_poll();
-    return ret;
+    return nwrite;
 }
 
 void

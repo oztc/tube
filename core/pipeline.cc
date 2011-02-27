@@ -8,8 +8,10 @@
 
 namespace pipeserv {
 
-Connection::Connection()
+Connection::Connection(int sock)
+    : in_stream(sock), out_stream(sock)
 {
+    fd = sock;
     timeout = 0; // default no timeout
     prio = 0;
     inactive = false;
@@ -185,9 +187,9 @@ QueueScheduler::~QueueScheduler()
 }
 
 Connection*
-ConnectionFactory::create_connection()
+ConnectionFactory::create_connection(int fd)
 {
-    return new Connection();
+    return new Connection(fd);
 }
 
 void
@@ -225,9 +227,9 @@ Pipeline::find_stage(std::string name)
 }
 
 Connection*
-Pipeline::create_connection()
+Pipeline::create_connection(int fd)
 {
-    return factory_->create_connection();
+    return factory_->create_connection(fd);
 }
 
 void

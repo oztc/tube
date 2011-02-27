@@ -118,11 +118,8 @@ Server::main_loop()
             continue;
         }
         // set non-blocking mode
-        Connection* conn = pipeline.create_connection();
+        Connection* conn = pipeline.create_connection(client_fd);
         conn->address = address;
-        conn->fd = client_fd;
-        conn->prio = 0;
-        conn->inactive = false;
         utils::set_socket_blocking(conn->fd, false);
 
         LOG(INFO, "accepted connection from %s",

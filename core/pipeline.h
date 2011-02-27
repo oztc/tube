@@ -13,7 +13,7 @@
 #include <google/dense_hash_map>
 
 #include "utils/misc.h"
-#include "core/buffer.h"
+#include "core/stream.h"
 #include "core/inet_address.h"
 
 namespace pipeserv {
@@ -29,9 +29,9 @@ struct Connection
 
     InternetAddress address;
 
-    // buffers
-    Buffer    in_buf;
-    Buffer    out_buf;
+    // input and output stream
+    InputStream    in_stream;
+    OutputStream   out_stream;
 
     // locks
     utils::Mutex mutex;
@@ -45,7 +45,7 @@ struct Connection
     std::string address_string() const;
     void set_timeout(int sec) { timeout = sec; }
 
-    Connection();
+    Connection(int sock);
 };
 
 class Scheduler : utils::Noncopyable
@@ -91,7 +91,7 @@ class Stage;
 struct ConnectionFactory
 {
 public:
-    virtual Connection* create_connection();
+    virtual Connection* create_connection(int fd);
     virtual void        destroy_connection(Connection* conn);
 };
 
@@ -121,7 +121,7 @@ public:
 
     Stage* find_stage(std::string name);
 
-    Connection* create_connection();
+    Connection* create_connection(int fd);
     void dispose_connection(Connection* conn);
 
     void disable_poll(Connection* conn);

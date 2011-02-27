@@ -109,7 +109,7 @@ Buffer::read_from_fd(int fd)
     return nread;
 }
 
-void
+bool
 Buffer::append(const byte* ptr, size_t sz)
 {
     if (need_copy_for_write())
@@ -121,7 +121,7 @@ Buffer::append(const byte* ptr, size_t sz)
     if (sz < right_offset_) {
         memcpy(dest, ptr, sz);
         right_offset_ -= sz;
-        return;
+        return true;
     }
     memcpy(dest, ptr, right_offset_);
     ptr += right_offset_;
@@ -137,6 +137,7 @@ Buffer::append(const byte* ptr, size_t sz)
         ptr += kPageSize;
         sz -= kPageSize;
     }
+    return true; // buffer objects always accept the append operation
 }
 
 bool
