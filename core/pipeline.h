@@ -45,7 +45,10 @@ struct Connection
     std::string address_string() const;
     void set_timeout(int sec) { timeout = sec; }
 
+    void active_close();
+
     Connection(int sock);
+    virtual ~Connection() {}
 };
 
 class Scheduler : utils::Noncopyable
@@ -95,13 +98,15 @@ public:
     virtual void        destroy_connection(Connection* conn);
 };
 
+class PollInStage;
+
 class Pipeline : utils::Noncopyable
 {
     typedef std::map<std::string, Stage*> StageMap;
     StageMap       map_;
     utils::RWMutex mutex_;
 
-    Stage*             poll_in_stage_;
+    PollInStage*             poll_in_stage_;
     ConnectionFactory* factory_;
 
     Pipeline();
@@ -119,6 +124,7 @@ public:
 
     void set_connection_factory(ConnectionFactory* fac);
 
+    PollInStage* poll_in_stage() const { return poll_in_stage_; }
     Stage* find_stage(std::string name);
 
     Connection* create_connection(int fd);

@@ -106,7 +106,7 @@ void
 Response::close()
 {
     inactive_ = true;
-    ::close(conn_->fd); // this will trigger EPOLLHUP event
+    conn_->active_close();
 }
 
 }

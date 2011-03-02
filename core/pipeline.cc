@@ -18,6 +18,13 @@ Connection::Connection(int sock)
     last_active = time(NULL);
 }
 
+void
+Connection::active_close()
+{
+    PollInStage* stage = (PollInStage*) Pipeline::instance().poll_in_stage();
+    stage->cleanup_connection(this);
+}
+
 bool
 Connection::trylock()
 {
@@ -257,7 +264,7 @@ void
 Pipeline::add_stage(std::string name, Stage* stage)
 {
     if (name == "poll_in") {
-        poll_in_stage_ = stage;
+        poll_in_stage_ = (PollInStage*) stage;
     }
     map_.insert(std::make_pair(name, stage));
 }

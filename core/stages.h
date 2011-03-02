@@ -58,12 +58,12 @@ public:
     virtual void initialize();
     virtual void main_loop();
 
+    void cleanup_connection(Connection* conn);
 friend class IdleScanner;
 
 private:
     void add_poll(Poller* poller);
     void read_connection(Connection* conn);
-    void cleanup_connection(Connection* conn);
     void handle_connection(Connection* conn, PollerEvent evt);
 };
 
