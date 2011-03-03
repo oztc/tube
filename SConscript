@@ -15,6 +15,8 @@ source = ['utils/logger.cc',
           'core/stages.cc',
           'core/wrapper.cc']
 
+http_source = ['http/http_parser.c', 'http/connection.cc']
+
 epoll_source = ['core/poller_impl/epoll_poller.cc']
 kqueue_source = ['core/poller_impl/kqueue_poller.cc']
 
@@ -25,11 +27,15 @@ libflags = ['pthread', 'boost_thread-mt']
 if ARGUMENTS.get('release', 0) == '1':
     cflags = '-O3 -march=native'
 
-env = Environment(ENV=os.environ, CFLAGS=cflags, CXXFLAGS=cflags,
-                  CPPPATH=inc_path, LIBS=libflags)
+def PassEnv(name, dstname):
+    if name in os.environ:
+        env[dstname] = os.environ[name]
 
 def GetOS():
-    return platform.uname()[0]
+    return platform.uname()[0]    
+
+env = Environment(ENV=os.environ, CFLAGS=cflags, CXXFLAGS=cflags,
+                  CPPPATH=inc_path, LIBS=libflags)
 
 if not env.GetOption('clean'):
     conf = env.Configure(config_h='config.h')
@@ -43,19 +49,16 @@ if not env.GetOption('clean'):
         conf.Define('USE_LINUX_SENDFILE')
     env = conf.Finish()
 
-def PassEnv(name, dstname):
-    if name in os.environ:
-        env[dstname] = os.environ[name]
-
 PassEnv('CFLAGS', 'CFLAGS')
 PassEnv('CXXFLAGS', 'CXXFLAGS')
 PassEnv('LDFLAGS', 'LINKFLAGS')
 
-env.VariantDir('build', '.')
+env.Command('http/http_parser.c', 'http/http_parser.rl', 'ragel -s -G2 $SOURCE -o $TARGET')
 libpipeserv = env.SharedLibrary('pipeserv', source=source)
+libpipeserv_web = env.SharedLibrary('pipeserv_web', source=http_source)
 
 def GenTestProg(name, src):
-    ldflags = [libpipeserv]
+    ldflags = [libpipeserv, libpipeserv_web]
     if GetOS() == 'Linux':
         ldflags.append('-Wl,-rpath=.')
     env.Program(name, source=src, LINKFLAGS=[env['LINKFLAGS']] + ldflags)
@@ -64,3 +67,4 @@ GenTestProg('test/hash_server', 'test/hash_server.cc')
 GenTestProg('test/pingpong_server', 'test/pingpong_server.cc')
 GenTestProg('test/test_buffer', 'test/test_buffer.cc')
 GenTestProg('test/file_server', 'test/file_server.cc')
+GenTestProg('test/test_http_parser', 'test/test_http_parser.cc')

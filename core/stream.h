@@ -15,6 +15,7 @@ public:
 
     ssize_t read_into_buffer();
     Buffer& buffer() { return buffer_; }
+    const Buffer& buffer() const { return buffer_; }
     void    close();
 
 private:

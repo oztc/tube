@@ -177,6 +177,7 @@ PollInStage::read_connection(Connection* conn)
     do {
         nread = conn->in_stream.read_into_buffer();
     } while (nread > 0);
+    conn->last_active = time(NULL);
     conn->unlock();
 
     if (nread < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
@@ -227,12 +228,14 @@ WriteBackStage::~WriteBackStage()
 int
 WriteBackStage::process_task(Connection* conn)
 {
+    conn->last_active = time(NULL);
     utils::set_socket_blocking(conn->fd, true);
     OutputStream& out = conn->out_stream;
     int rs = out.write_into_output();
     utils::set_socket_blocking(conn->fd, false);
 
     if (!out.is_done() && rs > 0) {
+        conn->last_active = time(NULL);
         sched_add(conn);
         return -1;
     } else {
