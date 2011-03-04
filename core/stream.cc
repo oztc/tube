@@ -70,4 +70,12 @@ OutputStream::append_file(std::string filename, off64_t offset, off64_t length)
     return filesender->size();
 }
 
+size_t
+OutputStream::append_buffer(const Buffer& buf)
+{
+    Writeable* buffer = new Buffer(buf);
+    writeables_.push_back(buffer);
+    return buffer->size();
+}
+
 }

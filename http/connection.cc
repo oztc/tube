@@ -18,7 +18,7 @@ DEF_CALLBACK_PROC(on_uri, append_uri);
 DEF_CALLBACK_PROC(on_query_string ,append_query_string);
 DEF_CALLBACK_PROC(on_fragment, append_fragment);
 DEF_CALLBACK_PROC(on_path, append_path);
-DEF_CALLBACK_PROC(on_chunk_data, append_chunk)
+DEF_CALLBACK_PROC(on_chunk_data, append_chunk);
 
 static int
 on_message_complete(http_parser* parser)

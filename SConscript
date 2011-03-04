@@ -15,7 +15,9 @@ source = ['utils/logger.cc',
           'core/stages.cc',
           'core/wrapper.cc']
 
-http_source = ['http/http_parser.c', 'http/connection.cc']
+http_source = ['http/http_parser.c',
+               'http/connection.cc',
+               'http/http_wrapper.cc']
 
 epoll_source = ['core/poller_impl/epoll_poller.cc']
 kqueue_source = ['core/poller_impl/kqueue_poller.cc']

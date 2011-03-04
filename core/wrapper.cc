@@ -24,17 +24,24 @@ ssize_t
 Request::read_data(byte* ptr, size_t sz)
 {
     Buffer& buf = conn_->in_stream.buffer();
-    if (buf.size() > 0) {
-        size_t len = 0;
-        byte* bufptr = buf.get_page_segment(buf.first_page(), &len);
-        memcpy(ptr, bufptr, len);
-        return buf.pop_page();
-    } else {
-        utils::set_socket_blocking(conn_->fd, true);
-        ssize_t nread = ::read(conn_->fd, (void*) ptr, sz);
-        utils::set_socket_blocking(conn_->fd, false);
-        return nread;
+    size_t nbuffer_read = buf.size();
+    ssize_t nread = 0;
+    if (nbuffer_read > 0) {
+        if (sz < buf.size()) {
+            nbuffer_read = sz;
+            sz = 0;
+        } else {
+            sz -= nbuffer_read;
+        }
+        buf.copy_front(ptr, nbuffer_read);
+        ptr += nbuffer_read;
     }
+    if (sz > 0) {
+        utils::set_socket_blocking(conn_->fd, true);
+        nread = ::read(conn_->fd, (void*) ptr, sz);
+        utils::set_socket_blocking(conn_->fd, false);
+    }
+    return nbuffer_read + nread;
 }
 
 size_t Response::kMaxMemorySizes = (4 << 20);

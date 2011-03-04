@@ -6,7 +6,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-
 #include "pipeline.h"
 
 namespace pipeserv {
@@ -37,6 +36,7 @@ public:
 
 class Response : public Wrapper
 {
+protected:
     size_t      max_mem_;
     bool        inactive_;
     Stage*      out_stage_;
@@ -48,9 +48,12 @@ public:
     virtual ~Response();
 
     int     response_code() const;
-    ssize_t write_data(const byte* ptr, size_t sz);
-    void    write_file(std::string filename, off64_t offset, off64_t length);
-    ssize_t flush_data();
+
+    virtual ssize_t write_data(const byte* ptr, size_t sz);
+    virtual void    write_file(std::string filename, off64_t offset,
+                               off64_t length);
+    virtual ssize_t flush_data();
+
     bool    active() const { return !inactive_; }
     void    close();
 };

@@ -33,7 +33,7 @@ struct HttpRequestData
     short transfer_encoding;
     short version_major;
     short version_minor;
-    bool keep_alive;
+    bool  keep_alive;
 
     HttpRequestData();
 };

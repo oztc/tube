@@ -32,6 +32,8 @@ public:
     ssize_t write_into_output();
     void    append_data(const byte* data, size_t size);
     off64_t append_file(std::string filename, off64_t offset, off64_t length);
+    size_t  append_buffer(const Buffer& buf);
+
     bool    is_done() const { return writeables_.empty(); }
     size_t  memory_usage() const { return memory_usage_; }
 
