@@ -1,4 +1,5 @@
 #include "http/connection.h"
+#include "http/configuration.h"
 #include "utils/logger.h"
 
 namespace pipeserv {
@@ -160,6 +161,7 @@ HttpConnection::finish_header_line()
 void
 HttpConnection::finish_parse()
 {
+    UrlRuleConfig& url_rule_cfg = UrlRuleConfig::instance();
     tmp_request_.method = parser_.method;
     tmp_request_.content_length = parser_.content_length;
     tmp_request_.transfer_encoding = parser_.transfer_encoding;
@@ -169,6 +171,9 @@ HttpConnection::finish_parse()
 
     LOG(DEBUG, "parsed packet with content-length: %d\n",
         tmp_request_.content_length);
+    // match the rule using regex
+    tmp_request_.url_rule = url_rule_cfg.match_uri(tmp_request_.uri);
+
     requests_.push_back(tmp_request_);
     tmp_request_ = HttpRequestData();
     last_header_key_.clear();

@@ -5,6 +5,175 @@
 
 namespace pipeserv {
 
+// some common http response status defined by the standard
+// copied from http://www.w3.org/Protocols/rfc2616/rfc2616-sec6.html
+
+const HttpResponseStatus
+HttpResponseStatus::kHttpResponseContinue =
+    HttpResponseStatus(100, "Continue");
+
+const HttpResponseStatus
+HttpResponseStatus::kHttpResponseSwitchingProtocols =
+    HttpResponseStatus(101, "Switching Protocols");
+
+const HttpResponseStatus
+HttpResponseStatus::kHttpResponseOK =
+    HttpResponseStatus(200, "OK");
+
+const HttpResponseStatus
+HttpResponseStatus::kHttpResponseCreated =
+    HttpResponseStatus(201, "Created");
+
+const HttpResponseStatus
+HttpResponseStatus::kHttpResponseAccepted =
+    HttpResponseStatus(202, "Accepted");
+
+const HttpResponseStatus
+HttpResponseStatus::kHttpResponseNonAuthoritativeInformation =
+    HttpResponseStatus(203, "Non-Authoritative Information");
+
+const HttpResponseStatus
+HttpResponseStatus::kHttpResponseNoContent =
+    HttpResponseStatus(204, "No Content");
+
+const HttpResponseStatus
+HttpResponseStatus::kHttpResponseResetContent =
+    HttpResponseStatus(205, "Reset Content");
+
+const HttpResponseStatus
+HttpResponseStatus::kHttpResponsePartialContent =
+    HttpResponseStatus(206, "Partial Content");
+
+const HttpResponseStatus
+HttpResponseStatus::kHttpResponseMultipleChoices =
+    HttpResponseStatus(300, "Multiple Choices");
+
+const HttpResponseStatus
+HttpResponseStatus::kHttpResponseMovedPermanently =
+    HttpResponseStatus(301, "Moved Permanently");
+
+const HttpResponseStatus
+HttpResponseStatus::kHttpResponseFound =
+    HttpResponseStatus(302, "Found");
+
+const HttpResponseStatus
+HttpResponseStatus::kHttpResponseSeeOther =
+    HttpResponseStatus(303, "See Other");
+
+const HttpResponseStatus
+HttpResponseStatus::kHttpResponseNotModified =
+    HttpResponseStatus(304, "Not Modified");
+
+const HttpResponseStatus
+HttpResponseStatus::kHttpResponseUseProxy =
+    HttpResponseStatus(305, "Use Proxy");
+
+const HttpResponseStatus
+HttpResponseStatus::kHttpResponseTemporaryRedirect =
+    HttpResponseStatus(307, "Temporary Redirect");
+
+const HttpResponseStatus
+HttpResponseStatus::kHttpResponseBadRequest =
+    HttpResponseStatus(400, "Bad Request");
+
+const HttpResponseStatus
+HttpResponseStatus::kHttpResponseUnauthorized =
+    HttpResponseStatus(401, "Unauthorized");
+
+const HttpResponseStatus
+HttpResponseStatus::kHttpResponsePaymentRequired =
+    HttpResponseStatus(402, "Payment Required");
+
+const HttpResponseStatus
+HttpResponseStatus::kHttpResponseForbidden =
+    HttpResponseStatus(403, "Forbidden");
+
+const HttpResponseStatus
+HttpResponseStatus::kHttpResponseNotFound =
+    HttpResponseStatus(404, "Not Found");
+
+const HttpResponseStatus
+HttpResponseStatus::kHttpResponseMethodNotAllowed =
+    HttpResponseStatus(405, "Method Not Allowed");
+
+const HttpResponseStatus
+HttpResponseStatus::kHttpResponseNotAcceptable =
+    HttpResponseStatus(406, "Not Acceptable");
+
+const HttpResponseStatus
+HttpResponseStatus::kHttpResponseProxyAuthenticationRequired =
+    HttpResponseStatus(407, "Proxy Authentication Required");
+
+const HttpResponseStatus
+HttpResponseStatus::kHttpResponseRequestTimeout =
+    HttpResponseStatus(408, "Request Time-out");
+
+const HttpResponseStatus
+HttpResponseStatus::kHttpResponseConflict =
+    HttpResponseStatus(409, "Conflict");
+
+const HttpResponseStatus
+HttpResponseStatus::kHttpResponseGone =
+    HttpResponseStatus(410, "Gone");
+
+const HttpResponseStatus
+HttpResponseStatus::kHttpResponseLengthRequired =
+    HttpResponseStatus(411, "Length Required");
+
+const HttpResponseStatus
+HttpResponseStatus::kHttpResponsePreconditionFailed =
+    HttpResponseStatus(412, "Precondition Failed");
+
+const HttpResponseStatus
+HttpResponseStatus::kHttpResponseRequestEntityTooLarge =
+    HttpResponseStatus(413, "Request Entity Too Large");
+
+const HttpResponseStatus
+HttpResponseStatus::kHttpResponseRequestUriTooLarge =
+    HttpResponseStatus(414, "Request-URI Too Large");
+
+const HttpResponseStatus
+HttpResponseStatus::kHttpResponseUnsupportedMediaType =
+    HttpResponseStatus(415, "Unsupported Media Type");
+
+const HttpResponseStatus
+HttpResponseStatus::kHttpResponseRequestedrangenotsatisfiable =
+    HttpResponseStatus(416, "Requested range not satisfiable");
+
+const HttpResponseStatus
+HttpResponseStatus::kHttpResponseExpectationFailed =
+    HttpResponseStatus(417, "Expectation Failed");
+
+const HttpResponseStatus
+HttpResponseStatus::kHttpResponseInternalServerError =
+    HttpResponseStatus(500, "Internal Server Error");
+
+const HttpResponseStatus
+HttpResponseStatus::kHttpResponseNotImplemented =
+    HttpResponseStatus(501, "Not Implemented");
+
+const HttpResponseStatus
+HttpResponseStatus::kHttpResponseBadGateway =
+    HttpResponseStatus(502, "Bad Gateway");
+
+const HttpResponseStatus
+HttpResponseStatus::kHttpResponseServiceUnavailable =
+    HttpResponseStatus(503, "Service Unavailable");
+
+const HttpResponseStatus
+HttpResponseStatus::kHttpResponseGatewayTimeout =
+    HttpResponseStatus(504, "Gateway Time-out");
+
+const HttpResponseStatus
+HttpResponseStatus::kHttpResponseHttpVersionNotSupported =
+    HttpResponseStatus(505, "HTTP Version not supported");
+
+// end of common http response status definition
+
+HttpResponseStatus::HttpResponseStatus(int code, std::string reason_string)
+    : status_code(code), reason(reason_string)
+{}
+
 HttpRequest::HttpRequest(Connection* conn, const HttpRequestData& request)
     : Request(conn), request_(request)
 {

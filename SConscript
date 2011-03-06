@@ -17,14 +17,16 @@ source = ['utils/logger.cc',
 
 http_source = ['http/http_parser.c',
                'http/connection.cc',
-               'http/http_wrapper.cc']
+               'http/http_wrapper.cc',
+               'http/interface.cc',
+               'http/configuration.cc']
 
 epoll_source = ['core/poller_impl/epoll_poller.cc']
 kqueue_source = ['core/poller_impl/kqueue_poller.cc']
 
 cflags = '-g -DLOG_ENABLED'
 inc_path = ['.', '/usr/local/include']
-libflags = ['pthread', 'boost_thread-mt']
+libflags = ['pthread', 'boost_thread-mt', 'yaml-cpp']
 
 if ARGUMENTS.get('release', 0) == '1':
     cflags = '-O3 -march=native'

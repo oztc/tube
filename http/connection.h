@@ -19,6 +19,8 @@ struct HttpHeaderItem
 
 typedef std::vector<HttpHeaderItem> HttpHeaderEnumerate;
 
+struct UrlRuleItem;
+
 struct HttpRequestData
 {
     HttpHeaderEnumerate headers;
@@ -34,6 +36,8 @@ struct HttpRequestData
     short version_major;
     short version_minor;
     bool  keep_alive;
+
+    const UrlRuleItem* url_rule;
 
     HttpRequestData();
 };

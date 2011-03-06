@@ -41,6 +41,49 @@ struct HttpResponseStatus
 {
     int         status_code;
     std::string reason;
+
+    HttpResponseStatus(int code, std::string reason);
+
+    static const HttpResponseStatus kHttpResponseContinue;
+    static const HttpResponseStatus kHttpResponseSwitchingProtocols;
+    static const HttpResponseStatus kHttpResponseOK;
+    static const HttpResponseStatus kHttpResponseCreated;
+    static const HttpResponseStatus kHttpResponseAccepted;
+    static const HttpResponseStatus kHttpResponseNonAuthoritativeInformation;
+    static const HttpResponseStatus kHttpResponseNoContent;
+    static const HttpResponseStatus kHttpResponseResetContent;
+    static const HttpResponseStatus kHttpResponsePartialContent;
+    static const HttpResponseStatus kHttpResponseMultipleChoices;
+    static const HttpResponseStatus kHttpResponseMovedPermanently;
+    static const HttpResponseStatus kHttpResponseFound;
+    static const HttpResponseStatus kHttpResponseSeeOther;
+    static const HttpResponseStatus kHttpResponseNotModified;
+    static const HttpResponseStatus kHttpResponseUseProxy;
+    static const HttpResponseStatus kHttpResponseTemporaryRedirect;
+    static const HttpResponseStatus kHttpResponseBadRequest;
+    static const HttpResponseStatus kHttpResponseUnauthorized;
+    static const HttpResponseStatus kHttpResponsePaymentRequired;
+    static const HttpResponseStatus kHttpResponseForbidden;
+    static const HttpResponseStatus kHttpResponseNotFound;
+    static const HttpResponseStatus kHttpResponseMethodNotAllowed;
+    static const HttpResponseStatus kHttpResponseNotAcceptable;
+    static const HttpResponseStatus kHttpResponseProxyAuthenticationRequired;
+    static const HttpResponseStatus kHttpResponseRequestTimeout;
+    static const HttpResponseStatus kHttpResponseConflict;
+    static const HttpResponseStatus kHttpResponseGone;
+    static const HttpResponseStatus kHttpResponseLengthRequired;
+    static const HttpResponseStatus kHttpResponsePreconditionFailed;
+    static const HttpResponseStatus kHttpResponseRequestEntityTooLarge;
+    static const HttpResponseStatus kHttpResponseRequestUriTooLarge;
+    static const HttpResponseStatus kHttpResponseUnsupportedMediaType;
+    static const HttpResponseStatus kHttpResponseRequestedrangenotsatisfiable;
+    static const HttpResponseStatus kHttpResponseExpectationFailed;
+    static const HttpResponseStatus kHttpResponseInternalServerError;
+    static const HttpResponseStatus kHttpResponseNotImplemented;
+    static const HttpResponseStatus kHttpResponseBadGateway;
+    static const HttpResponseStatus kHttpResponseServiceUnavailable;
+    static const HttpResponseStatus kHttpResponseGatewayTimeout;
+    static const HttpResponseStatus kHttpResponseHttpVersionNotSupported;
 };
 
 class HttpResponse : public Response
