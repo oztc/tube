@@ -19,7 +19,8 @@ http_source = ['http/http_parser.c',
                'http/connection.cc',
                'http/http_wrapper.cc',
                'http/interface.cc',
-               'http/configuration.cc']
+               'http/configuration.cc',
+               'http/http_stages.cc']
 
 epoll_source = ['core/poller_impl/epoll_poller.cc']
 kqueue_source = ['core/poller_impl/kqueue_poller.cc']

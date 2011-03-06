@@ -1,4 +1,7 @@
 */.*
 .*
 !.gitignore
+build/
+config.log
+
 

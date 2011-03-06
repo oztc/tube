@@ -41,7 +41,8 @@ private:
 struct UrlRuleItem
 {
     boost::xpressive::sregex regex;
-    std::list<BaseHttpHandler*> handlers;
+    typedef std::list<BaseHttpHandler*> HandlerChain;
+    HandlerChain handlers;
 
     UrlRuleItem(std::string regex);
 };

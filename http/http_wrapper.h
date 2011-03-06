@@ -35,6 +35,7 @@ public:
 
     std::vector<std::string> find_header_values(std::string key) const;
     std::string find_header_value(std::string key) const;
+    const UrlRuleItem* url_rule_item() const { return request_.url_rule; }
 };
 
 struct HttpResponseStatus
@@ -93,6 +94,7 @@ protected:
     int64               content_length_;
     Buffer              prepare_buffer_;
     bool                has_content_length_;
+    bool                is_responded_;
 
 public:
     static const char* kHttpVersion;
@@ -109,12 +111,12 @@ public:
 
     bool has_content_length() const { return has_content_length_; }
     int64 content_length() const { return content_length_; }
+    bool is_responded() const { return is_responded_; }
 
     // write it into the prepared buffer
     virtual ssize_t write_data(const byte* ptr, size_t size);
     virtual void respond(const HttpResponseStatus& status);
-private:
-    void reset();
+    virtual void reset();
 };
 
 }

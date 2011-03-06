@@ -298,7 +298,7 @@ HttpResponse::respond(const HttpResponseStatus& status)
         // send the body if have any
         conn_->out_stream.append_buffer(prepare_buffer_);
     }
-    reset();
+    is_responded_ = true;
 }
 
 void
@@ -308,6 +308,7 @@ HttpResponse::reset()
     content_length_ = -1;
     headers_.clear();
     has_content_length_ = true;
+    is_responded_ = false;
 }
 
 }
