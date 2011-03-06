@@ -70,8 +70,8 @@ Scheduler::~Scheduler()
 {
 }
 
-QueueScheduler::QueueScheduler(bool supress_connection_lock)
-    : Scheduler(), supress_connection_lock_(supress_connection_lock)
+QueueScheduler::QueueScheduler(bool suppress_connection_lock)
+    : Scheduler(), suppress_connection_lock_(suppress_connection_lock)
 {
     nodes_.set_empty_key(NULL);
     nodes_.set_deleted_key((Connection*) 0x08);
@@ -166,7 +166,7 @@ QueueScheduler::pick_task_lock_connection()
 Connection*
 QueueScheduler::pick_task()
 {
-    if (supress_connection_lock_) {
+    if (suppress_connection_lock_) {
         return pick_task_nolock_connection();
     } else {
         return pick_task_lock_connection();
