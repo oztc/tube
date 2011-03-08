@@ -1,3 +1,5 @@
+#include "pch.h"
+
 #include <cstdio>
 
 #include "core/stages.h"

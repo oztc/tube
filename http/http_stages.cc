@@ -1,3 +1,5 @@
+#include "pch.h"
+
 #include "http/http_stages.h"
 #include "http/connection.h"
 #include "http/http_wrapper.h"
@@ -33,6 +35,9 @@ HttpParserStage::HttpParserStage()
     pipeline_.set_connection_factory(new HttpConnectionFactory());
     handler_stage_ = pipeline_.find_stage("http_handler");
 }
+
+HttpParserStage::~HttpParserStage()
+{}
 
 int
 HttpParserStage::process_task(Connection* conn)
@@ -71,7 +76,7 @@ HttpHandlerStage::process_task(Connection* conn)
     std::list<HttpRequestData>& client_requests =
         http_connection->get_request_data_list();
     HttpResponse response(conn);
-    
+
     for (int i = 0; i < kMaxContinuesRequestNumber; i++) {
         if (client_requests.empty())
             break;

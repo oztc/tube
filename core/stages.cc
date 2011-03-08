@@ -1,8 +1,8 @@
+#include "pch.h"
+
 #include <cassert>
 #include <cstdlib>
 #include <limits.h>
-#include <boost/function.hpp>
-#include <boost/bind.hpp>
 
 #include "utils/exception.h"
 #include "utils/logger.h"

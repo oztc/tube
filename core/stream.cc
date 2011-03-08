@@ -1,3 +1,5 @@
+#include "pch.h"
+
 #include "core/stream.h"
 #include "core/filesender.h"
 
