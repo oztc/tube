@@ -17,6 +17,8 @@ protected:
 public:
     HttpRequest(Connection* conn, const HttpRequestData& request);
 
+    static std::string url_decode(std::string url);
+
     std::string path() const { return request_.path; }
     std::string uri() const { return request_.uri; }
     std::string query_string() const { return request_.query_string; }
@@ -33,6 +35,7 @@ public:
     const HttpHeaderEnumerate& headers() const { return request_.headers; }
     HttpHeaderEnumerate& headers() { return request_.headers; }
 
+    bool has_header(std::string key) const;
     std::vector<std::string> find_header_values(std::string key) const;
     std::string find_header_value(std::string key) const;
     const UrlRuleItem* url_rule_item() const { return request_.url_rule; }
@@ -106,7 +109,7 @@ public:
 
     void enable_content_length(bool enabled) { has_content_length_ = enabled; }
     void set_content_length(int64 content_length) {
-        content_length_ = content_length_;
+        content_length_ = content_length;
     }
 
     bool has_content_length() const { return has_content_length_; }

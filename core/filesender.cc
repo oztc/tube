@@ -20,21 +20,18 @@
 
 #include "filesender.h"
 #include "utils/exception.h"
+#include "utils/logger.h"
 
 namespace pipeserv {
 
-FileSender::FileSender(std::string filename, off64_t offset, off64_t length)
-    : filename_(filename), offset_(offset), length_(length)
+FileSender::FileSender(int file_desc, off64_t offset, off64_t length)
+    : file_fd_(file_desc), offset_(offset), length_(length)
 {
-    file_fd_ = ::open(filename.c_str(), O_RDONLY);
-    if (file_fd_ < 0) {
-        throw utils::FileOpenError(filename);
-    }
     if (length_ == -1) {
         // get the length of whole file
         struct stat64 st;
         fstat64(file_fd_, &st);
-        length_ = st.st_size;
+        length_ = st.st_size - offset;
     }
     // if (::lseek64(file_fd_, offset_, SEEK_SET) < 0) {
     //     throw utils::SyscallException();
@@ -66,6 +63,7 @@ FileSender::write_to_fd(int fd)
     if (nsend < 0)
         return nsend;
     length_ -= nsend;
+    return nsend;
 }
 
 }

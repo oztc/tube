@@ -148,7 +148,6 @@ QueueScheduler::pick_task_lock_connection()
         cond_.wait(lk);
     }
 
-    size_t len = list_.size();
     Connection* conn = NULL;
     for (NodeList::iterator it = list_.begin(); it != list_.end(); ++it) {
         conn = *it;

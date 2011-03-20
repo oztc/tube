@@ -17,6 +17,8 @@ public:
     virtual void handle_request(HttpRequest& request,
                                 HttpResponse& response) = 0;
 
+    virtual void load_param() {}
+
     void set_name(std::string name) { name_ = name; }
     std::string name() const { return name_; }
 
@@ -36,12 +38,6 @@ public:
     virtual BaseHttpHandler* create() const = 0;
     virtual std::string module_name() const = 0;
     virtual std::string vender_name() const = 0;
-};
-
-class StaticHttpHandler : public BaseHttpHandler
-{
-public:
-    // TODO:
 };
 
 }

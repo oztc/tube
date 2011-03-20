@@ -21,7 +21,7 @@ protected:
     Stage(std::string name);
     virtual ~Stage() {}
 
-    virtual int process_task(Connection* conn) {};
+    virtual int process_task(Connection* conn) { return 0; };
 public:
     virtual void initialize() {}
 

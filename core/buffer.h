@@ -20,7 +20,7 @@ public:
     virtual ~Writeable() {}
 
     virtual ssize_t write_to_fd(int fd) = 0;
-    virtual size_t  size() const = 0;
+    virtual u64     size() const = 0;
     virtual size_t  memory_usage() const = 0;
     virtual bool    append(const byte* ptr, size_t size) = 0;
 };
@@ -39,7 +39,7 @@ public:
 
     Buffer& operator=(const Buffer& rhs);
 
-    virtual size_t size() const { return size_; }
+    virtual u64    size() const { return size_; }
     virtual size_t memory_usage() const { return size_; }
 
     ssize_t read_from_fd(int fd);

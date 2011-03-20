@@ -49,14 +49,9 @@ struct UrlRuleItem
 
 class UrlRuleConfig
 {
+public:
     UrlRuleConfig();
     ~UrlRuleConfig();
-public:
-    static UrlRuleConfig& instance() {
-        static UrlRuleConfig ins;
-        return ins;
-    }
-
     void load_url_rules(const Node& subdoc);
     void load_url_rule(std::string regex, const Node& subdoc);
 
@@ -64,6 +59,22 @@ public:
 
 private:
     std::vector<UrlRuleItem> rules_;
+};
+
+class VHostConfig
+{
+    typedef std::map<std::string, UrlRuleConfig> HostMap;
+    HostMap host_map_;
+    VHostConfig();
+    ~VHostConfig();
+public:
+    static VHostConfig& instance() {
+        static VHostConfig ins;
+        return ins;
+    }
+
+    void load_vhost_rules(const Node& subdoc);
+    const UrlRuleItem* match_uri(std::string host, std::string uri) const;
 };
 
 class ServerConfig

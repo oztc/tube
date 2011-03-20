@@ -100,7 +100,7 @@ Buffer::read_from_fd(int fd)
     int nread = readv(fd, vec, 2);
     if (nread < 0)
         return nread;
-    if (right_offset_ <= nread) {
+    if (right_offset_ <= (size_t) nread) {
         right_offset_ = kPageSize + right_offset_ - nread;
         cow_info_->pages_.push_back(cow_info_->extra_page_);
         cow_info_->extra_page_ = ALLOC_PAGE();
@@ -187,6 +187,7 @@ Buffer::pop(size_t pop_size)
         left_offset_ = 0;
         right_offset_ = kPageSize;
     }
+    return true;
 }
 
 int

@@ -16,8 +16,8 @@ process_stub(HttpConnection* conn)
 {
     Buffer& buf = conn->in_stream.buffer();
     if (conn->is_ready()) {
-        u64 clen = conn->get_request_data_list().back().content_length;
-        fprintf(stderr, "consume the content with size %d\n", clen);
+        int64 clen = conn->get_request_data_list().back().content_length;
+        fprintf(stderr, "consume the content with size %lld\n", clen);
         buf.pop(clen);
         conn->get_request_data_list().clear();
     }

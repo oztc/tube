@@ -33,6 +33,11 @@ HttpParserStage::HttpParserStage()
 {
     // replace the connection factory
     pipeline_.set_connection_factory(new HttpConnectionFactory());
+}
+
+void
+HttpParserStage::initialize()
+{
     handler_stage_ = pipeline_.find_stage("http_handler");
 }
 
@@ -62,6 +67,7 @@ const int HttpHandlerStage::kMaxContinuesRequestNumber = 3;
 HttpHandlerStage::HttpHandlerStage()
     : Stage("http_handler")
 {
+    sched_ = new QueueScheduler();
     // default_chain_.push_back();
 }
 
@@ -100,6 +106,7 @@ HttpHandlerStage::process_task(Connection* conn)
         }
         response.reset();
     }
+    return response.response_code();
 }
 
 }

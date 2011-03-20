@@ -19,12 +19,14 @@ http_source = ['http/http_parser.c',
                'http/connection.cc',
                'http/http_wrapper.cc',
                'http/interface.cc',
+               'http/static_handler.cc',
                'http/configuration.cc',
                'http/http_stages.cc']
 
 epoll_source = ['core/poller_impl/epoll_poller.cc']
 kqueue_source = ['core/poller_impl/kqueue_poller.cc']
 
+essential_cflags = ' -Wall'
 cflags = '-g -DLOG_ENABLED'
 inc_path = ['.', '/usr/local/include']
 libflags = ['pthread', 'boost_thread-mt', 'yaml-cpp']
@@ -39,6 +41,8 @@ def PassEnv(name, dstname):
 def GetOS():
     return platform.uname()[0]    
 
+cflags += essential_cflags
+
 env = Environment(ENV=os.environ, CFLAGS=cflags, CXXFLAGS=cflags,
                   CPPPATH=inc_path, LIBS=libflags)
 
@@ -52,6 +56,8 @@ if not env.GetOption('clean'):
         source += kqueue_source
     if GetOS() == 'Linux' and conf.CheckCHeader('sys/sendfile.h'):
         conf.Define('USE_LINUX_SENDFILE')
+    elif GetOS() == 'FreeBSD' and conf.CheckFunction('sendfile'):
+        conf.Define('USE_FREEBSD_SENDFILE')
     env = conf.Finish()
 
 PassEnv('CFLAGS', 'CFLAGS')
@@ -73,3 +79,5 @@ GenTestProg('test/pingpong_server', 'test/pingpong_server.cc')
 GenTestProg('test/test_buffer', 'test/test_buffer.cc')
 GenTestProg('test/file_server', 'test/file_server.cc')
 GenTestProg('test/test_http_parser', 'test/test_http_parser.cc')
+GenTestProg('test/test_config', 'test/test_config.cc')
+GenTestProg('test/test_web', 'test/test_web.cc')

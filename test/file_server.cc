@@ -54,7 +54,7 @@ public:
             }
         }
         buf.pop(total_size);
-        printf("processed %d remain %d bytes\n", total_size, buf.size());
+        printf("processed %lu remain %llu bytes\n", total_size, buf.size());
 
         handle_request(request, response);
         return response.response_code();
@@ -63,10 +63,11 @@ public:
     void handle_request(FilenameRequest& req, Response& res) {
         while (!req.empty()) {
             std::string filename = req.next_filename();
-            try {
-                res.write_file(filename, 0, -1);
-            } catch (const utils::FileOpenError& ex) {
-                LOG(WARNING, "%s: %s", filename.c_str(), ex.what());
+            int file_desc = ::open(filename.c_str(), O_RDONLY);
+            if (file_desc < 0) {
+                LOG(WARNING, "Cannot open %s", filename.c_str());
+            } else {
+                res.write_file(file_desc, 0, -1);
             }
         }
         puts("done");

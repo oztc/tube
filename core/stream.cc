@@ -2,13 +2,14 @@
 
 #include "core/stream.h"
 #include "core/filesender.h"
+#include "utils/exception.h"
 
 namespace pipeserv {
 
 ssize_t
 InputStream::read_into_buffer()
 {
-    buffer_.read_from_fd(fd_);
+    return buffer_.read_from_fd(fd_);
 }
 
 void
@@ -65,12 +66,13 @@ OutputStream::append_data(const byte* data, size_t size)
 }
 
 off64_t
-OutputStream::append_file(std::string filename, off64_t offset, off64_t length)
+OutputStream::append_file(int file_desc, off64_t offset, off64_t length)
 {
-    Writeable* filesender = new FileSender(filename, offset, length);
+    Writeable* filesender = new FileSender(file_desc, offset, length);
     writeables_.push_back(filesender);
     return filesender->size();
 }
+
 
 size_t
 OutputStream::append_buffer(const Buffer& buf)

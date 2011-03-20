@@ -211,7 +211,20 @@ HttpRequest::method_string() const
         return std::string("TRACE");
     case HTTP_UNLOCK:
         return std::string("UNLOCK");
+    default:
+        return std::string();
     }
+}
+
+bool
+HttpRequest::has_header(std::string key) const
+{
+    const HttpHeaderEnumerate& headers = request_.headers;
+    for (size_t i = 0; i < headers.size(); i++) {
+        if (headers[i].key == key)
+            return true;
+    }
+    return false;
 }
 
 std::vector<std::string>
@@ -219,7 +232,7 @@ HttpRequest::find_header_values(std::string key) const
 {
     const HttpHeaderEnumerate& headers = request_.headers;
     std::vector<std::string> result;
-    for (int i = 0; i < headers.size(); i++) {
+    for (size_t i = 0; i < headers.size(); i++) {
         if (headers[i].key == key)
             result.push_back(headers[i].value);
     }
@@ -230,7 +243,7 @@ std::string
 HttpRequest::find_header_value(std::string key) const
 {
     const HttpHeaderEnumerate& headers = request_.headers;
-    for (int i = 0; i < headers.size(); i++) {
+    for (size_t i = 0; i < headers.size(); i++) {
         if (headers[i].key == key)
             return headers[i].value;
     }
@@ -242,7 +255,7 @@ ignore_compare(const std::string& p, const std::string& q)
 {
     if (p.length() != q.length())
         return false;
-    for (int i = 0; i < p.length(); i++) {
+    for (size_t i = 0; i < p.length(); i++) {
         if (p[i] != q[i] && abs(p[i] - q[i]) != 'a' - 'A')
             return false;
     }
@@ -284,7 +297,7 @@ HttpResponse::respond(const HttpResponseStatus& status)
     std::stringstream response_text;
     response_text << kHttpVersion << " " << status.status_code << " "
                   << status.reason << kHttpNewLine;
-    for (int i = 0; i < headers_.size(); i++) {
+    for (size_t i = 0; i < headers_.size(); i++) {
         const HttpHeaderItem& item = headers_[i];
         response_text << item.key << ": " << item.value << kHttpNewLine;
     }
@@ -309,6 +322,51 @@ HttpResponse::reset()
     headers_.clear();
     has_content_length_ = true;
     is_responded_ = false;
+}
+
+// decode and encode url
+
+static const char* kHexChar = "0123456789ABCDEF";
+
+static int8
+char_to_hex(char ch)
+{
+    const char* ptr = strchr(kHexChar, ch);
+    if (ptr == NULL)
+        return -1;
+    else
+        return ptr - kHexChar;
+}
+
+static std::string
+http_url_decode(const std::string& url)
+{
+    std::string res;
+    for (size_t i = 0; i < url.length(); i++) {
+        int8 p = 0, q = 0;
+        unsigned char ch = 0;
+        if (url[i] != '%')
+            goto pass;
+        if (i + 2 >= url.length())
+            goto pass;
+        p = char_to_hex(url[i + 1]);
+        q = char_to_hex(url[i + 2]);
+        if (p == -1 || q == -1)
+            goto pass;
+        ch = (p << 4) | q;
+        res += ch;
+        i += 2;
+        continue;
+    pass:
+        res += url[i];
+    }
+    return res;
+}
+
+std::string
+HttpRequest::url_decode(std::string url)
+{
+    return http_url_decode(url);
 }
 
 }

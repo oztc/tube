@@ -65,7 +65,8 @@ void
 IdleScanner::scan_idle_connection(Poller& poller)
 {
     uint32_t current_time = time(NULL);
-    if (current_time - last_scan_time_ < scan_timeout_) {
+    int idled_time = current_time - last_scan_time_;
+    if (idled_time < scan_timeout_) {
         return;
     }
     std::vector<Connection*> timeout_connections;
@@ -79,7 +80,7 @@ IdleScanner::scan_idle_connection(Poller& poller)
             timeout_connections.push_back(conn);
         }
     }
-    for (int i = 0; i < timeout_connections.size(); i++) {
+    for (size_t i = 0; i < timeout_connections.size(); i++) {
          // timeout: this connection has been idle for a long time.
         Connection* conn = timeout_connections[i];
         LOG(INFO, "connection %d has timeout", conn->fd);
@@ -101,7 +102,7 @@ PollInStage::PollInStage()
 
 PollInStage::~PollInStage()
 {
-    for (int i = 0; i < pollers_.size(); i++) {
+    for (size_t i = 0; i < pollers_.size(); i++) {
         PollerFactory::instance().destroy_poller(pollers_[i]);
     }
 }
@@ -118,9 +119,9 @@ PollInStage::sched_add(Connection* conn)
 {
     utils::Lock lk(mutex_);
     // pick the poll with minimum size
-    int min_size = INT_MAX;
+    size_t min_size = INT_MAX;
     int poll_idx = -1;
-    for (int i = 0; i < pollers_.size(); i++) {
+    for (size_t i = 0; i < pollers_.size(); i++) {
         size_t nfds = pollers_[i]->size();
         if (min_size > nfds) {
             poll_idx = i;
@@ -138,7 +139,7 @@ void
 PollInStage::sched_remove(Connection* conn)
 {
     utils::Lock lk(mutex_);
-    for (int i = 0; i < pollers_.size(); i++) {
+    for (size_t i = 0; i < pollers_.size(); i++) {
         if (pollers_[i]->remove_fd(conn->fd))
             return;
     }
@@ -275,14 +276,14 @@ RecycleStage::main_loop()
         while (queue_.size() < recycle_batch_size_) {
             cond_.wait(mutex_);
         }
-        for (int i = 0; i < recycle_batch_size_; i++) {
+        for (size_t i = 0; i < recycle_batch_size_; i++) {
             conns[i] = queue_.front();
             queue_.pop();
         }
         mutex_.unlock();
 
         utils::XLock lk(pipeline.mutex());
-        for (int i = 0; i < recycle_batch_size_; i++) {
+        for (size_t i = 0; i < recycle_batch_size_; i++) {
             pipeline.dispose_connection(conns[i]);
         }
     }

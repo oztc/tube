@@ -27,7 +27,6 @@ std::string
 InternetAddress::address_string() const throw()
 {
     char pstr[INET6_ADDRSTRLEN];
-    void* inaddr = NULL;
     const char* result = NULL;
 
     memset(pstr, 0, INET6_ADDRSTRLEN);
@@ -56,6 +55,7 @@ InternetAddress::port() const
     case AF_INET6:
         return addr_.v6_addr.sin6_port;
     }
+    return -1;
 }
 
 }

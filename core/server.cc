@@ -90,10 +90,10 @@ Server::initialize_stages()
     recycle_stage_->initialize();
 
     recycle_stage_->start_thread();
-    for (int i = 0; i < read_stage_cnt_; i++) {
+    for (size_t i = 0; i < read_stage_cnt_; i++) {
         read_stage_->start_thread();
     }
-    for (int i = 0; i < write_stage_cnt_; i++) {
+    for (size_t i = 0; i < write_stage_cnt_; i++) {
         write_stage_->start_thread();
     }
 }

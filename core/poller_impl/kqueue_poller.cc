@@ -6,6 +6,7 @@
 #error "kqueue is not supported"
 #endif
 
+#include <errno.h>
 #include <limits.h>
 #include <sys/types.h>
 #include <sys/event.h>
@@ -54,7 +55,7 @@ build_kqueue_filter(PollerEvent evt)
 static PollerEvent
 build_poller_event(short filter, u_short events)
 {
-    PollerEvent evt;
+    PollerEvent evt = 0;
     if (filter & EVFILT_READ) evt |= POLLER_EVENT_READ;
     if (filter & EVFILT_WRITE) evt |= POLLER_EVENT_WRITE;
     if (events & EV_EOF) evt |= POLLER_EVENT_HUP;
@@ -109,8 +110,12 @@ KqueuePoller::handle_event(int timeout) throw ()
         int nfds = ::kevent(kqueue_, NULL, 0, kevents, MAX_EVENT_PER_KEVENT,
                             &tspec);
         if (nfds < 0) {
-            free(kevents);
-            throw utils::SyscallException();
+            if (errno == EINTR) {
+                continue;
+            } else {
+                free(kevents);
+                throw utils::SyscallException();
+            }
         }
         if (!pre_handler_.empty())
             pre_handler_(*this);

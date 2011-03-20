@@ -50,8 +50,9 @@ public:
     int     response_code() const;
 
     virtual ssize_t write_data(const byte* ptr, size_t sz);
-    virtual void    write_file(std::string filename, off64_t offset,
-                               off64_t length);
+    virtual ssize_t write_string(std::string str);
+    virtual ssize_t write_string(const char* str);
+    virtual void    write_file(int file_desce, off64_t offset, off64_t length);
     virtual ssize_t flush_data();
 
     bool    active() const { return !inactive_; }

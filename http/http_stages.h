@@ -14,6 +14,8 @@ class HttpParserStage : public ParserStage
 public:
     HttpParserStage();
     virtual ~HttpParserStage();
+
+    virtual void initialize();
 protected:
     int process_task(Connection* conn);
 };
@@ -22,7 +24,7 @@ class HttpHandlerStage : public Stage
 {
 public:
     static const int kMaxContinuesRequestNumber;
-    
+
     HttpHandlerStage();
     virtual ~HttpHandlerStage();
 protected:

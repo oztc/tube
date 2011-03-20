@@ -18,17 +18,18 @@
 
 namespace pipeserv {
 
-typedef uint8_t  byte;
+// only for LP/LLP64 model
+typedef unsigned char byte;
 
-typedef uint8_t  u8;
-typedef uint16_t u16;
-typedef uint32_t u32;
-typedef uint64_t u64;
+typedef unsigned char          u8;
+typedef unsigned short int     u16;
+typedef unsigned int           u32;
+typedef unsigned long long int u64;
 
-typedef int8_t int8;
-typedef int16_t int16;
-typedef int32_t int23;
-typedef int64_t int64;
+typedef char          int8;
+typedef short int     int16;
+typedef int           int23;
+typedef long long int int64;
 
 namespace utils {
 

@@ -82,7 +82,8 @@ HttpConnection::do_parse()
             break;
         }
         if (http_parser_has_error(&parser_)) {
-            LOG(WARNING, "error when parsing http packet at %*s", len, ptr);
+            LOG(WARNING, "error when parsing http packet at %*s", (int) len,
+                ptr);
             break;
         }
     }
@@ -158,12 +159,14 @@ HttpConnection::finish_header_line()
 {
     tmp_request_.headers.push_back(
         HttpHeaderItem(last_header_key_, last_header_value_));
+    last_header_key_ = "";
+    last_header_value_ = "";
 }
 
 void
 HttpConnection::finish_parse()
 {
-    UrlRuleConfig& url_rule_cfg = UrlRuleConfig::instance();
+    VHostConfig& vhost_cfg = VHostConfig::instance();
     tmp_request_.method = parser_.method;
     tmp_request_.content_length = parser_.content_length;
     tmp_request_.transfer_encoding = parser_.transfer_encoding;
@@ -171,10 +174,16 @@ HttpConnection::finish_parse()
     tmp_request_.version_minor = parser_.version_minor;
     tmp_request_.keep_alive = http_parser_should_keep_alive(&parser_);
 
-    LOG(DEBUG, "parsed packet with content-length: %d\n",
+    LOG(DEBUG, "parsed packet with content-length: %llu\n",
         tmp_request_.content_length);
+    std::string host = "default";
+    for (size_t i = 0; i < tmp_request_.headers.size(); i++) {
+        if (tmp_request_.headers[i].key == "Host") {
+            host = tmp_request_.headers[i].value;
+        }
+    }
     // match the rule using regex
-    tmp_request_.url_rule = url_rule_cfg.match_uri(tmp_request_.uri);
+    tmp_request_.url_rule = vhost_cfg.match_uri(host, tmp_request_.uri);
 
     requests_.push_back(tmp_request_);
     tmp_request_ = HttpRequestData();

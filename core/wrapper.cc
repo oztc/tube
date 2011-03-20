@@ -83,10 +83,22 @@ Response::write_data(const byte* ptr, size_t sz)
     return sz;
 }
 
-void
-Response::write_file(std::string filename, off64_t offset, off64_t length)
+ssize_t
+Response::write_string(std::string str)
 {
-    conn_->out_stream.append_file(filename, offset, length);
+    return write_data((const byte*) str.c_str(), str.length());
+}
+
+ssize_t
+Response::write_string(const char* str)
+{
+    return write_data((const byte*) str, strlen(str));
+}
+
+void
+Response::write_file(int file_desc, off64_t offset, off64_t length)
+{
+    conn_->out_stream.append_file(file_desc, offset, length);
 }
 
 ssize_t

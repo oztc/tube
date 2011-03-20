@@ -56,7 +56,7 @@ build_epoll_event(PollerEvent evt)
 static PollerEvent
 build_poller_event(int events)
 {
-    PollerEvent evt;
+    PollerEvent evt = 0;
     if (events & EPOLLIN) evt |= POLLER_EVENT_READ;
     if (events & EPOLLOUT) evt |= POLLER_EVENT_WRITE;
     if (events & EPOLLERR) evt |= POLLER_EVENT_ERROR;
@@ -105,8 +105,12 @@ EpollPoller::handle_event(int timeout) throw()
         int nfds = epoll_wait(epoll_fd_, epoll_evt, MAX_EVENT_PER_POLL,
                               timeout * 1000);
         if (nfds < 0) {
-            free(epoll_evt);
-            throw utils::SyscallException();
+            if (errno == EINTR) {
+                continue;
+            } else {
+                free(epoll_evt);
+                throw utils::SyscallException();
+            }
         }
         if (!pre_handler_.empty())
             pre_handler_(*this);
