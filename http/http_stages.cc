@@ -47,6 +47,7 @@ HttpParserStage::~HttpParserStage()
 int
 HttpParserStage::process_task(Connection* conn)
 {
+    Request req(conn);
     HttpConnection* http_connection = (HttpConnection*) conn;
     if (!http_connection->do_parse()) {
         // FIXME: if the protocol client sent is not HTTP, is it OK to close
@@ -105,6 +106,10 @@ HttpHandlerStage::process_task(Connection* conn)
                 HttpResponseStatus::kHttpResponseInternalServerError);
         }
         response.reset();
+    }
+    if (!client_requests.empty()) {
+        LOG(DEBUG, "remaining req %lu", client_requests.size());
+        sched_add(conn);
     }
     return response.response_code();
 }

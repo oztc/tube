@@ -22,10 +22,16 @@ public:
     virtual void handle_request(HttpRequest& request, HttpResponse& response);
     virtual void load_param();
 
-    void respond_zero_copy(const std::string& path, HttpRequest& request,
-                           HttpResponse& resposne);
-    void respond_error(HttpRequest& request, HttpResponse& response,
-                       const HttpResponseStatus& error);
+    void respond_zero_copy(const std::string& path, struct stat64 stat,
+                           HttpRequest& request, HttpResponse& resposne);
+
+    void respond_error(const HttpResponseStatus& error,
+                       HttpRequest& request, HttpResponse& response);
+
+    void respond_directory_list(const std::string& path,
+                                const std::string& href_path,
+                                HttpRequest& request,
+                                HttpResponse& response);
 };
 
 class StaticHttpHandlerFactory : public BaseHttpHandlerFactory

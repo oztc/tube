@@ -1,0 +1,13 @@
+address: 0.0.0.0
+port: 8000
+
+handlers:
+  - name: default
+    module: static
+    doc_root: /mnt/data/picture
+
+host:
+  domain: default
+  url-rules:
+    .+: 
+      - default

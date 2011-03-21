@@ -27,6 +27,23 @@ Connection::active_close()
     stage->cleanup_connection(this);
 }
 
+void
+Connection::set_io_timeout(int msec)
+{
+    struct timeval tm;
+    tm.tv_sec = msec / 1000;
+    tm.tv_usec = (msec % 1000) * 1000;
+
+    if (setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tm, sizeof(struct timeval))
+        < 0) {
+        LOG(WARNING, "Cannot set IO timeout on fd %d", fd);
+    }
+    if (setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &tm, sizeof(struct timeval))
+        < 0) {
+        LOG(WARNING, "Cannot set IO timeout on fd %d", fd);
+    }
+}
+
 bool
 Connection::trylock()
 {
@@ -104,6 +121,15 @@ QueueScheduler::add_task(Connection* conn)
     }
 }
 
+void
+QueueScheduler::reschedule()
+{
+    if (!suppress_connection_lock_) {
+        utils::Lock lk(mutex_);
+        cond_.notify_all();
+    }
+}
+
 class QueueSchedulerPickScope
 {
     utils::Mutex&   mutex_;
@@ -148,6 +174,7 @@ QueueScheduler::pick_task_lock_connection()
         cond_.wait(lk);
     }
 
+reschedule:
     Connection* conn = NULL;
     for (NodeList::iterator it = list_.begin(); it != list_.end(); ++it) {
         conn = *it;
@@ -157,11 +184,8 @@ QueueScheduler::pick_task_lock_connection()
             return conn;
         }
     }
-    conn = list_.front();
-    conn->lock();
-    list_.pop_front();
-    nodes_.erase(conn);
-    return conn;
+    cond_.wait(lk);
+    goto reschedule;
 }
 
 Connection*
@@ -283,6 +307,15 @@ Pipeline::enable_poll(Connection* conn)
     utils::set_socket_blocking(conn->fd, false);
     if (!conn->inactive) {
         poll_in_stage_->sched_add(conn);
+    }
+}
+
+void
+Pipeline::reschedule_all()
+{
+    for (StageMap::iterator it = map_.begin(); it != map_.end(); ++it) {
+        Stage* stage = it->second;
+        stage->sched_reschedule();
     }
 }
 

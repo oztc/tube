@@ -17,6 +17,7 @@ namespace pipeserv {
 Stage::Stage(std::string name)
     : pipeline_(Pipeline::instance())
 {
+    sched_ = NULL;
     LOG(INFO, "adding %s stage to pipeline", name.c_str());
     pipeline_.add_stage(name, this);
 }
@@ -39,13 +40,23 @@ Stage::sched_remove(Connection* conn)
 }
 
 void
+Stage::sched_reschedule()
+{
+    if (sched_) {
+        sched_->reschedule();
+    }
+}
+
+void
 Stage::main_loop()
 {
     if (!sched_) return;
     while (true) {
         Connection* conn = sched_->pick_task();
-        if (process_task(conn) >= 0)
+        if (process_task(conn) >= 0) {
             conn->unlock();
+            pipeline_.reschedule_all();
+        }
     }
 }
 
@@ -180,6 +191,7 @@ PollInStage::read_connection(Connection* conn)
     } while (nread > 0);
     conn->last_active = time(NULL);
     conn->unlock();
+    pipeline_.reschedule_all();
 
     if (nread < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
         parser_stage_->sched_add(conn);

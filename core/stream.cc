@@ -3,6 +3,7 @@
 #include "core/stream.h"
 #include "core/filesender.h"
 #include "utils/exception.h"
+#include "utils/logger.h"
 
 namespace pipeserv {
 

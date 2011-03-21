@@ -27,6 +27,7 @@ public:
 
     virtual bool sched_add(Connection* conn);
     virtual void sched_remove(Connection* conn);
+    virtual void sched_reschedule();
 
     virtual void main_loop();
 

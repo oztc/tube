@@ -58,6 +58,7 @@ HttpConnection::HttpConnection(int fd)
     parser_.on_fragment = on_fragment;
     parser_.on_chunk_data = on_chunk_data;
 
+    set_io_timeout(500); // max block time
 }
 
 const size_t HttpConnection::kMaxBodySize = 16 << 10;

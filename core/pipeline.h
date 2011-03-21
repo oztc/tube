@@ -44,6 +44,7 @@ struct Connection
 
     std::string address_string() const;
     void set_timeout(int sec) { timeout = sec; }
+    void set_io_timeout(int msec);
 
     void active_close();
 
@@ -60,6 +61,7 @@ public:
     virtual void add_task(Connection* conn)     = 0;
     virtual Connection* pick_task()             = 0;
     virtual void remove_task(Connection* conn)  = 0;
+    virtual void reschedule()                   = 0;
 };
 
 class QueueScheduler : public Scheduler
@@ -84,6 +86,7 @@ public:
     virtual void        add_task(Connection* conn);
     virtual Connection* pick_task();
     virtual void        remove_task(Connection* conn);
+    virtual void        reschedule();
 private:
     Connection* pick_task_nolock_connection();
     Connection* pick_task_lock_connection();
@@ -132,6 +135,8 @@ public:
 
     void disable_poll(Connection* conn);
     void enable_poll(Connection* conn);
+
+    void reschedule_all();
 };
 
 }
