@@ -325,17 +325,15 @@ HttpResponse::reset()
 }
 
 // decode and encode url
-
-static const char* kHexChar = "0123456789ABCDEF";
-
 static int8
 char_to_hex(char ch)
 {
-    const char* ptr = strchr(kHexChar, ch);
+    static const char* hex_char = "0123456789ABCDEF";
+    const char* ptr = strchr(hex_char, ch);
     if (ptr == NULL)
         return -1;
     else
-        return ptr - kHexChar;
+        return ptr - hex_char;
 }
 
 static std::string

@@ -11,7 +11,7 @@
 namespace pipeserv {
 
 Connection::Connection(int sock)
-    : in_stream(sock), out_stream(sock)
+    : in_stream(sock), out_stream(sock), close_after_finish(false)
 {
     fd = sock;
     timeout = 0; // default no timeout

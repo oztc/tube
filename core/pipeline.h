@@ -37,6 +37,7 @@ struct Connection
     utils::Mutex mutex;
     long         owner;
 
+    bool close_after_finish;
 
     bool trylock();
     void lock();

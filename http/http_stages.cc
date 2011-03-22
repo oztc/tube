@@ -69,7 +69,6 @@ HttpHandlerStage::HttpHandlerStage()
     : Stage("http_handler")
 {
     sched_ = new QueueScheduler();
-    // default_chain_.push_back();
 }
 
 HttpHandlerStage::~HttpHandlerStage()
@@ -92,7 +91,11 @@ HttpHandlerStage::process_task(Connection* conn)
         if (request.url_rule_item()) {
             chain = request.url_rule_item()->handlers;
         } else {
-            chain = default_chain_;
+            // mis-configured, send an error
+            response.write_string("This url is not configured.");
+            response.respond(
+                HttpResponseStatus::kHttpResponseServiceUnavailable);
+            continue;
         }
         for (UrlRuleItem::HandlerChain::iterator it = chain.begin();
              it != chain.end(); ++it) {
@@ -106,11 +109,17 @@ HttpHandlerStage::process_task(Connection* conn)
                 HttpResponseStatus::kHttpResponseInternalServerError);
         }
         response.reset();
+        if (request.find_header_value("Connection") == "close") {
+            LOG(DEBUG, "active close after transfer finish");
+            conn->close_after_finish = true;
+            goto done;
+        }
     }
     if (!client_requests.empty()) {
         LOG(DEBUG, "remaining req %lu", client_requests.size());
         sched_add(conn);
     }
+done:
     return response.response_code();
 }
 

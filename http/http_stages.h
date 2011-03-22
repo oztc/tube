@@ -29,8 +29,6 @@ public:
     virtual ~HttpHandlerStage();
 protected:
     int process_task(Connection* conn);
-private:
-    std::list<BaseHttpHandler*> default_chain_;
 };
 
 }
