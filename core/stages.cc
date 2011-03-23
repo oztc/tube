@@ -109,6 +109,7 @@ PollInStage::PollInStage()
     sched_ = NULL; // no scheduler, need to override ``sched_add``
     timeout_ = kDefaultTimeout; // 10s by default
     poller_name_ = PollerFactory::instance().default_poller_name();
+    current_poller_ = 0;
 }
 
 PollInStage::~PollInStage()
@@ -129,21 +130,10 @@ bool
 PollInStage::sched_add(Connection* conn)
 {
     utils::Lock lk(mutex_);
-    // pick the poll with minimum size
-    size_t min_size = INT_MAX;
-    int poll_idx = -1;
-    for (size_t i = 0; i < pollers_.size(); i++) {
-        size_t nfds = pollers_[i]->size();
-        if (min_size > nfds) {
-            poll_idx = i;
-            min_size = nfds;
-        }
-    }
-    if (poll_idx < 0) {
-        return false;
-    }
-    return pollers_[poll_idx]->add_fd(conn->fd, conn, POLLER_EVENT_READ |
-                                      POLLER_EVENT_ERROR | POLLER_EVENT_HUP);
+    current_poller_ = (current_poller_ + 1) % pollers_.size();
+    return pollers_[current_poller_]->add_fd(
+        conn->fd, conn, POLLER_EVENT_READ | POLLER_EVENT_ERROR
+        | POLLER_EVENT_HUP);
 }
 
 void

@@ -37,7 +37,9 @@ public:
 class PollInStage : public Stage
 {
     utils::Mutex      mutex_;
+
     std::vector<Poller*> pollers_;
+    size_t               current_poller_;
 
     std::string poller_name_;
     int timeout_;
