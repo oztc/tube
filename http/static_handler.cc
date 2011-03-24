@@ -262,6 +262,13 @@ StaticHttpHandler::try_open_file(const std::string& path, HttpRequest& request,
     return file_desc;
 }
 
+static void
+send_client_cache_info(HttpResponse& response, time_t* mtime, std::string etag)
+{
+    response.add_header("Last-Modified", build_last_modified(mtime));
+    response.add_header("ETag", etag);
+}
+
 void
 StaticHttpHandler::respond_file_content(const std::string& path,
                                         struct stat64 stat,
@@ -269,6 +276,8 @@ StaticHttpHandler::respond_file_content(const std::string& path,
                                         HttpResponse& response)
 {
     byte* cached_entry = NULL;
+    off64_t file_size = -1;
+    std::string etag;
 
     if (request.method() != HTTP_HEAD) {
         cached_entry = io_cache_.access_cache(path, stat.st_mtime,
@@ -276,15 +285,16 @@ StaticHttpHandler::respond_file_content(const std::string& path,
     }
 
     int file_desc = try_open_file(path, request, response);
-    if (file_desc < 0)
-        return;
+    if (file_desc < 0) {
+        goto done;
+    }
 
-    off64_t file_size = stat.st_size;
-    std::string etag = build_etag(path);
+    file_size = stat.st_size;
+    etag = build_etag(path);
 
     if (validate_client_cache(path, stat, etag, request)) {
         response.respond(HttpResponseStatus::kHttpResponseNotModified);
-        return;
+        goto done;
     }
 
     if (request.has_header("Range")) {
@@ -301,15 +311,13 @@ StaticHttpHandler::respond_file_content(const std::string& path,
             respond_error(
                 HttpResponseStatus::kHttpResponseRequestedrangenotsatisfiable,
                 request, response);
-            return;
+            goto done;
         }
         // sound everything is good
         response.set_content_length(length);
         response.add_header("Content-Range",
                             build_range_response(offset, length, file_size));
-        response.add_header("Last-Modified",
-                            build_last_modified(&stat.st_mtime));
-        response.add_header("ETag", etag);
+        send_client_cache_info(response, &stat.st_mtime, etag);
         if (request.method() != HTTP_HEAD && cached_entry) {
             response.write_data(cached_entry + offset, length);
         }
@@ -319,9 +327,7 @@ StaticHttpHandler::respond_file_content(const std::string& path,
         }
     } else {
         response.set_content_length(file_size);
-        response.add_header("Last-Modified",
-                            build_last_modified(&stat.st_mtime));
-        response.add_header("ETag", etag);
+        send_client_cache_info(response, &stat.st_mtime, etag);
         if (request.method() != HTTP_HEAD && cached_entry) {
             response.write_data(cached_entry, file_size);
         }
@@ -330,6 +336,8 @@ StaticHttpHandler::respond_file_content(const std::string& path,
             response.write_file(file_desc, 0, file_size);
         }
     }
+done:
+    delete [] cached_entry;
 }
 
 const int kEntryTypeDirectory = 0;
