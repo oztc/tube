@@ -75,7 +75,7 @@ IdleScanner::IdleScanner(int scan_timeout, PollInStage& stage)
 void
 IdleScanner::scan_idle_connection(Poller& poller)
 {
-    if (!stage_.mutex_.trylock()) {
+    if (!stage_.mutex_.try_lock()) {
         return;
     }
 
