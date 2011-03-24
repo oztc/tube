@@ -75,6 +75,10 @@ IdleScanner::IdleScanner(int scan_timeout, PollInStage& stage)
 void
 IdleScanner::scan_idle_connection(Poller& poller)
 {
+    if (!stage_.mutex_.trylock()) {
+        return;
+    }
+
     uint32_t current_time = time(NULL);
     int idled_time = current_time - last_scan_time_;
     if (idled_time < scan_timeout_) {
@@ -99,6 +103,7 @@ IdleScanner::scan_idle_connection(Poller& poller)
     }
 
     last_scan_time_ = current_time;
+    stage_.mutex_.unlock();
 }
 
 int PollInStage::kDefaultTimeout = 10;
