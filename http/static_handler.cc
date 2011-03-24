@@ -269,6 +269,20 @@ send_client_cache_info(HttpResponse& response, time_t* mtime, std::string etag)
     response.add_header("ETag", etag);
 }
 
+static void
+send_client_data(HttpResponse& response, const HttpResponseStatus& status,
+                 byte* cached_entry, int file_desc, off64_t offset,
+                 off64_t length)
+{
+    if (cached_entry) {
+        response.write_data(cached_entry + offset, length);
+        response.respond(status);
+    } else {
+        response.respond(status);
+        response.write_file(file_desc, offset, length);
+    }
+}
+
 void
 StaticHttpHandler::respond_file_content(const std::string& path,
                                         struct stat64 stat,
@@ -277,7 +291,10 @@ StaticHttpHandler::respond_file_content(const std::string& path,
 {
     byte* cached_entry = NULL;
     off64_t file_size = -1;
+    std::string range_str;
     std::string etag;
+    HttpResponseStatus ret_status = HttpResponseStatus::kHttpResponseOK;
+    off64_t offset = 0, length = -1;
 
     if (request.method() != HTTP_HEAD) {
         cached_entry = io_cache_.access_cache(path, stat.st_mtime,
@@ -297,10 +314,10 @@ StaticHttpHandler::respond_file_content(const std::string& path,
         goto done;
     }
 
-    if (request.has_header("Range")) {
+    range_str = request.find_header_value("Range");
+    if (range_str != "") {
         // parse range
-        off64_t offset, length;
-        parse_range(request.find_header_value("Range"), offset, length);
+        parse_range(range_str, offset, length);
         // incomplete range, doesn't have a length
         // we'll transfer all begining from that offset
         if (length < 0) {
@@ -313,28 +330,20 @@ StaticHttpHandler::respond_file_content(const std::string& path,
                 request, response);
             goto done;
         }
-        // sound everything is good
-        response.set_content_length(length);
         response.add_header("Content-Range",
                             build_range_response(offset, length, file_size));
-        send_client_cache_info(response, &stat.st_mtime, etag);
-        if (request.method() != HTTP_HEAD && cached_entry) {
-            response.write_data(cached_entry + offset, length);
-        }
-        response.respond(HttpResponseStatus::kHttpResponsePartialContent);
-        if (request.method() != HTTP_HEAD && !cached_entry) {
-            response.write_file(file_desc, offset, length);
-        }
+        ret_status = HttpResponseStatus::kHttpResponsePartialContent;
     } else {
-        response.set_content_length(file_size);
-        send_client_cache_info(response, &stat.st_mtime, etag);
-        if (request.method() != HTTP_HEAD && cached_entry) {
-            response.write_data(cached_entry, file_size);
-        }
+        offset = 0;
+        length = file_size;
+    }
+    response.set_content_length(length);
+    send_client_cache_info(response, &stat.st_mtime, etag);
+    if (request.method() != HTTP_HEAD) {
+        send_client_data(response, ret_status, cached_entry, file_desc, offset,
+                         length);
+    } else {
         response.respond(HttpResponseStatus::kHttpResponseOK);
-        if (request.method() != HTTP_HEAD && !cached_entry) {
-            response.write_file(file_desc, 0, file_size);
-        }
     }
 done:
     delete [] cached_entry;
