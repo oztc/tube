@@ -82,6 +82,7 @@ IdleScanner::scan_idle_connection(Poller& poller)
     uint32_t current_time = time(NULL);
     int idled_time = current_time - last_scan_time_;
     if (idled_time < scan_timeout_) {
+        stage_.mutex_.unlock();
         return;
     }
     std::vector<Connection*> timeout_connections;
