@@ -5,6 +5,7 @@ handlers:
   - name: default
     module: static
     doc_root: /mnt/data/picture
+    cache_size: 1024
 
 host:
   domain: default

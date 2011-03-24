@@ -8,12 +8,15 @@
 #include "utils/misc.h"
 #include "http/http_wrapper.h"
 #include "http/interface.h"
+#include "http/io_cache.h"
 
 namespace pipeserv {
 
 class StaticHttpHandler : public BaseHttpHandler
 {
     std::string doc_root_;
+
+    IOCache io_cache_;
 public:
     static std::string remove_path_dots(const std::string& path);
 
@@ -22,8 +25,8 @@ public:
     virtual void handle_request(HttpRequest& request, HttpResponse& response);
     virtual void load_param();
 
-    void respond_zero_copy(const std::string& path, struct stat64 stat,
-                           HttpRequest& request, HttpResponse& resposne);
+    void respond_file_content(const std::string& path, struct stat64 stat,
+                              HttpRequest& request, HttpResponse& resposne);
 
     void respond_error(const HttpResponseStatus& error,
                        HttpRequest& request, HttpResponse& response);

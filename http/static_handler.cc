@@ -41,12 +41,14 @@ StaticHttpHandler::StaticHttpHandler()
 {
     // setting up the default configuration parameters
     add_option("doc_root", "/var/www");
+    add_option("cache_size", "0");
 }
 
 void
 StaticHttpHandler::load_param()
 {
     doc_root_ = option("doc_root");
+    io_cache_.set_max_cache_entry(atoi(option("cache_size").c_str()));
 }
 
 // currently we only support single range
@@ -261,11 +263,18 @@ StaticHttpHandler::try_open_file(const std::string& path, HttpRequest& request,
 }
 
 void
-StaticHttpHandler::respond_zero_copy(const std::string& path,
-                                     struct stat64 stat,
-                                     HttpRequest& request,
-                                     HttpResponse& response)
+StaticHttpHandler::respond_file_content(const std::string& path,
+                                        struct stat64 stat,
+                                        HttpRequest& request,
+                                        HttpResponse& response)
 {
+    byte* cached_entry = NULL;
+
+    if (request.method() != HTTP_HEAD) {
+        cached_entry = io_cache_.access_cache(path, stat.st_mtime,
+                                              stat.st_size);
+    }
+
     int file_desc = try_open_file(path, request, response);
     if (file_desc < 0)
         return;
@@ -301,8 +310,11 @@ StaticHttpHandler::respond_zero_copy(const std::string& path,
         response.add_header("Last-Modified",
                             build_last_modified(&stat.st_mtime));
         response.add_header("ETag", etag);
+        if (request.method() != HTTP_HEAD && cached_entry) {
+            response.write_data(cached_entry + offset, length);
+        }
         response.respond(HttpResponseStatus::kHttpResponsePartialContent);
-        if (request.method() != HTTP_HEAD) {
+        if (request.method() != HTTP_HEAD && !cached_entry) {
             response.write_file(file_desc, offset, length);
         }
     } else {
@@ -310,8 +322,11 @@ StaticHttpHandler::respond_zero_copy(const std::string& path,
         response.add_header("Last-Modified",
                             build_last_modified(&stat.st_mtime));
         response.add_header("ETag", etag);
+        if (request.method() != HTTP_HEAD && cached_entry) {
+            response.write_data(cached_entry, file_size);
+        }
         response.respond(HttpResponseStatus::kHttpResponseOK);
-        if (request.method() != HTTP_HEAD) {
+        if (request.method() != HTTP_HEAD && !cached_entry) {
             response.write_file(file_desc, 0, file_size);
         }
     }
@@ -416,8 +431,9 @@ StaticHttpHandler::handle_request(HttpRequest& request, HttpResponse& response)
                       request, response);
         return;
     }
+
     if (S_ISREG(buf.st_mode)) {
-        respond_zero_copy(filepath, buf, request, response);
+        respond_file_content(filepath, buf, request, response);
     } else if (S_ISDIR(buf.st_mode)) {
         respond_directory_list(filepath, filename, request, response);
     } else {
