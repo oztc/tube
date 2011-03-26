@@ -106,10 +106,10 @@ HttpHandlerStage::process_task(Connection* conn)
         }
         if (!response.is_responded()) {
             response.respond(
-                HttpResponseStatus::kHttpResponseInternalServerError);
+                HttpResponseStatus::kHttpResponseServiceUnavailable);
         }
         response.reset();
-        if (request.find_header_value("Connection") == "close") {
+        if (!request.keep_alive()) {
             LOG(DEBUG, "active close after transfer finish");
             conn->close_after_finish = true;
             goto done;

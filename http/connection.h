@@ -40,6 +40,8 @@ struct HttpRequestData
     const UrlRuleItem* url_rule;
 
     HttpRequestData();
+
+    std::string method_string() const;
 };
 
 class HttpConnection : public Connection

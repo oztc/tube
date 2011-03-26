@@ -2,6 +2,7 @@
 
 #include "http/http_wrapper.h"
 #include "http/http_parser.h"
+#include "utils/misc.h"
 
 namespace pipeserv {
 
@@ -182,38 +183,7 @@ HttpRequest::HttpRequest(Connection* conn, const HttpRequestData& request)
 std::string
 HttpRequest::method_string() const
 {
-    switch (method()) {
-    case HTTP_COPY :
-        return std::string("COPY");
-    case HTTP_DELETE:
-        return std::string("DELETE");
-    case HTTP_GET:
-        return std::string("GET");
-    case HTTP_HEAD:
-        return std::string("HEAD");
-    case HTTP_LOCK:
-        return std::string("LOCK");
-    case HTTP_MKCOL:
-        return std::string("MKCOL");
-    case HTTP_MOVE:
-        return std::string("MOVE");
-    case HTTP_OPTIONS:
-        return std::string("OPTIONS");
-    case HTTP_POST:
-        return std::string("POST");
-    case HTTP_PROPFIND:
-        return std::string("PROPFIND");
-    case HTTP_PROPPATCH:
-        return std::string("PROPFIND");
-    case HTTP_PUT:
-        return std::string("PUT");
-    case HTTP_TRACE:
-        return std::string("TRACE");
-    case HTTP_UNLOCK:
-        return std::string("UNLOCK");
-    default:
-        return std::string();
-    }
+    return request_.method_string();
 }
 
 bool
@@ -250,18 +220,6 @@ HttpRequest::find_header_value(std::string key) const
     return "";
 }
 
-static bool
-ignore_compare(const std::string& p, const std::string& q)
-{
-    if (p.length() != q.length())
-        return false;
-    for (size_t i = 0; i < p.length(); i++) {
-        if (p[i] != q[i] && abs(p[i] - q[i]) != 'a' - 'A')
-            return false;
-    }
-    return true;
-}
-
 const char* HttpResponse::kHttpVersion = "HTTP/1.1";
 const char* HttpResponse::kHttpNewLine = "\r\n";
 
@@ -273,7 +231,7 @@ HttpResponse::HttpResponse(Connection* conn) : Response(conn)
 void
 HttpResponse::add_header(std::string key, std::string value)
 {
-    if (ignore_compare(key, std::string("content-length"))) {
+    if (utils::ignore_compare(key, std::string("content-length"))) {
         content_length_ = atoll(value.c_str());
     } else {
         headers_.push_back(HttpHeaderItem(key, value));

@@ -43,6 +43,43 @@ HttpRequestData::HttpRequestData()
 {
 }
 
+std::string
+HttpRequestData::method_string() const
+{
+    switch (method) {
+    case HTTP_COPY :
+        return std::string("COPY");
+    case HTTP_DELETE:
+        return std::string("DELETE");
+    case HTTP_GET:
+        return std::string("GET");
+    case HTTP_HEAD:
+        return std::string("HEAD");
+    case HTTP_LOCK:
+        return std::string("LOCK");
+    case HTTP_MKCOL:
+        return std::string("MKCOL");
+    case HTTP_MOVE:
+        return std::string("MOVE");
+    case HTTP_OPTIONS:
+        return std::string("OPTIONS");
+    case HTTP_POST:
+        return std::string("POST");
+    case HTTP_PROPFIND:
+        return std::string("PROPFIND");
+    case HTTP_PROPPATCH:
+        return std::string("PROPFIND");
+    case HTTP_PUT:
+        return std::string("PUT");
+    case HTTP_TRACE:
+        return std::string("TRACE");
+    case HTTP_UNLOCK:
+        return std::string("UNLOCK");
+    default:
+        return std::string();
+    }
+}
+
 HttpConnection::HttpConnection(int fd)
     : Connection(fd)
 {
@@ -183,8 +220,10 @@ HttpConnection::finish_parse()
             host = tmp_request_.headers[i].value;
         }
     }
-    // match the rule using regex
-    tmp_request_.url_rule = vhost_cfg.match_uri(host, tmp_request_.uri);
+    LOG(INFO, "[%s] %s from %s",  tmp_request_.method_string().c_str(),
+        tmp_request_.uri.c_str(), address_string().c_str());
+    // matching the rule
+    tmp_request_.url_rule = vhost_cfg.match_uri(host, tmp_request_);
 
     requests_.push_back(tmp_request_);
     tmp_request_ = HttpRequestData();

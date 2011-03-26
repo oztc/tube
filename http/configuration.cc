@@ -1,5 +1,7 @@
 #include "pch.h"
 
+#include <boost/xpressive/xpressive.hpp>
+
 #include "http/configuration.h"
 #include "utils/logger.h"
 
@@ -74,8 +76,66 @@ HandlerConfig::get_handler_instance(std::string name) const
     return NULL;
 }
 
-UrlRuleItem::UrlRuleItem(std::string reg)
-    : regex(boost::xpressive::sregex::compile(reg))
+class UrlRuleItemMatcher
+{
+public:
+    virtual ~UrlRuleItemMatcher() {}
+    virtual bool match(HttpRequestData& req_ref) = 0;
+};
+
+class RegexUrlRuleItemMatcher : public UrlRuleItemMatcher
+{
+    boost::xpressive::sregex regex_;
+public:
+    RegexUrlRuleItemMatcher(const std::string& regex)
+        : UrlRuleItemMatcher() {
+        regex_ = boost::xpressive::sregex::compile(regex);
+    }
+
+    virtual bool match(HttpRequestData& req_ref) {
+        const std::string& uri = req_ref.uri;
+        return boost::xpressive::regex_match(uri.begin(), uri.end(), regex_);
+    }
+};
+
+class PrefixUrlRuleItemMatcher : public UrlRuleItemMatcher
+{
+    std::string prefix_;
+public:
+    PrefixUrlRuleItemMatcher(const std::string& prefix)
+        : UrlRuleItemMatcher(), prefix_(prefix) {}
+
+    virtual bool match(HttpRequestData& req_ref) {
+        std::string& path = req_ref.path;
+        std::string& uri = req_ref.uri;
+        if (path.length() < prefix_.length()) {
+            return false;
+        }
+        if (path.substr(0, prefix_.length()) != prefix_) {
+            return false;
+        }
+        path.erase(path.begin(), path.begin() + prefix_.length());
+        uri.erase(uri.begin(), uri.begin() + prefix_.length());
+        return true;
+    }
+};
+
+UrlRuleItem::UrlRuleItem(const std::string& type, const Node& subdoc)
+{
+    if (type == "prefix") {
+        std::string prefix;
+        subdoc["prefix"] >> prefix;
+        matcher = new PrefixUrlRuleItemMatcher(prefix);
+    } else if (type == "regex") {
+        std::string regex;
+        subdoc["regex"] >> regex;
+        matcher = new RegexUrlRuleItemMatcher(regex);
+    } else {
+        matcher = NULL;
+    }
+}
+
+UrlRuleItem::~UrlRuleItem()
 {}
 
 UrlRuleConfig::UrlRuleConfig()
@@ -87,21 +147,23 @@ UrlRuleConfig::~UrlRuleConfig()
 void
 UrlRuleConfig::load_url_rules(const Node& subdoc)
 {
-    for (YAML::Iterator it = subdoc.begin(); it != subdoc.end(); ++it) {
-        std::string regex;
-        it.first() >> regex;
-        load_url_rule(regex, it.second());
+    for (size_t i = 0; i < subdoc.size(); i++) {
+        load_url_rule(subdoc[i]);
     }
 }
 
 void
-UrlRuleConfig::load_url_rule(std::string regex, const Node& subdoc)
+UrlRuleConfig::load_url_rule(const Node& subdoc)
 {
+    std::string type, opt;
+    subdoc["type"] >> type;
+    UrlRuleItem rule(type, subdoc);
+
+    const Node& chaindoc = subdoc["chain"];
     HandlerConfig& handler_cfg = HandlerConfig::instance();
-    UrlRuleItem rule(regex);
-    for (size_t i = 0; i < subdoc.size(); i++) {
+    for (size_t i = 0; i < chaindoc.size(); i++) {
         std::string name;
-        subdoc[i] >> name;
+        chaindoc[i] >> name;
         BaseHttpHandler* handler = handler_cfg.get_handler_instance(name);
         if (handler != NULL) {
             rule.handlers.push_back(handler);
@@ -113,11 +175,11 @@ UrlRuleConfig::load_url_rule(std::string regex, const Node& subdoc)
 }
 
 const UrlRuleItem*
-UrlRuleConfig::match_uri(std::string uri) const
+UrlRuleConfig::match_uri(HttpRequestData& req_ref) const
 {
     for (size_t i = 0; i < rules_.size(); i++) {
-        if (boost::xpressive::regex_match(uri.begin(), uri.end(),
-                                          rules_[i].regex)) {
+        LOG(DEBUG, "matching uri %lu/%lu", i, rules_.size());
+        if (rules_[i].matcher == NULL || rules_[i].matcher->match(req_ref)) {
             return &rules_[i];
         }
     }
@@ -141,13 +203,13 @@ VHostConfig::load_vhost_rules(const Node& subdoc)
 }
 
 const UrlRuleItem*
-VHostConfig::match_uri(std::string host, std::string uri) const
+VHostConfig::match_uri(const std::string& host, HttpRequestData& req_ref) const
 {
     HostMap::const_iterator it = host_map_.find(host);
     if (it == host_map_.end()) {
         it = host_map_.find("default");
     }
-    return it->second.match_uri(uri);
+    return it->second.match_uri(req_ref);
 }
 
 ServerConfig::ServerConfig()

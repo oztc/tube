@@ -15,6 +15,9 @@ namespace pipeserv {
 class StaticHttpHandler : public BaseHttpHandler
 {
     std::string doc_root_;
+    std::string error_root_;
+    std::string index_page_css_;
+    bool        allow_index_;
 
     IOCache io_cache_;
 public:

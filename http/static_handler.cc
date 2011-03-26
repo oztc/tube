@@ -41,14 +41,23 @@ StaticHttpHandler::StaticHttpHandler()
 {
     // setting up the default configuration parameters
     add_option("doc_root", "/var/www");
-    add_option("cache_size", "0");
+    add_option("error_root", "");
+    add_option("allow_index", "true");
+    add_option("index_page_css", "");
+    add_option("max_cache_entry", "0");
+    add_option("max_entry_size", "4096");
 }
 
 void
 StaticHttpHandler::load_param()
 {
     doc_root_ = option("doc_root");
-    io_cache_.set_max_cache_entry(atoi(option("cache_size").c_str()));
+    error_root_ = option("error_root");
+    allow_index_ = utils::parse_bool(option("allow_index"));
+    index_page_css_ = option("index_page_css");
+
+    io_cache_.set_max_cache_entry(atoi(option("max_cache_entry").c_str()));
+    io_cache_.set_max_entry_size(atoi(option("max_entry_size").c_str()));
 }
 
 // currently we only support single range
@@ -104,9 +113,10 @@ build_range_response(off64_t offset, off64_t length, off64_t file_size)
 static std::string
 build_last_modified(const time_t* last_modified_time)
 {
-    struct tm* t = gmtime(last_modified_time);
+    struct tm gmt;
+    gmtime_r(last_modified_time, &gmt); // thread safe
     char time_str[MAX_TIME_LEN];
-    strftime(time_str, MAX_TIME_LEN, "%a, %d %b %Y %T GMT", t);
+    strftime(time_str, MAX_TIME_LEN, "%a, %.2d %b %Y %T GMT", &gmt);
     return std::string(time_str);
 }
 
@@ -231,8 +241,10 @@ StaticHttpHandler::validate_client_cache(const std::string& path,
         request.find_header_value("If-Modified-Since");
     struct tm tm_struct;
     if (parse_datetime(modified_since, &tm_struct)) {
+        struct tm gmt;
+        gmtime_r(&stat.st_mtime, &gmt);
+        time_t orig_mtime = mktime(&gmt);
         time_t modified_time = mktime(&tm_struct);
-        time_t orig_mtime = mktime(gmtime(&stat.st_mtime));
         if (orig_mtime > modified_time) {
             return false;
         }
@@ -349,24 +361,30 @@ done:
     delete [] cached_entry;
 }
 
-const int kEntryTypeDirectory = 0;
-const int kEntryTypeFile = 1;
-
 static void
-add_directory_entry(std::stringstream& ss, std::string entry, int type)
+add_directory_entry(std::stringstream& ss, std::string entry,
+                    struct stat64* stat)
 {
-    switch (type) {
-    case kEntryTypeDirectory:
-        ss << "<div class=\"directory\">"
-           << "<a href=\"" << entry << "/\">" << entry << "</a>"
-           << "</div>" << std::endl;
-        break;
-    case kEntryTypeFile:
-        ss << "<div class=\"regular\">"
-           << "<a href=\"" << entry << "\">" << entry << "</a>"
-           << "</div>" << std::endl;
-        break;
+    if (stat == NULL) {
+        ss << "<tr class=\"parent\"><td><a href=\"..\">Parent Directory</a>"
+           << "</td>";
+    } else if (S_ISDIR(stat->st_mode)) {
+        ss << "<tr class=\"directory\">"
+           << "<td><a href=\"" << entry << "/\">" << entry << "/</a></td>"
+           << "<td>-</td>";
+    } else if (S_ISREG(stat->st_mode)) {
+        ss << "<tr class=\"regular\">"
+           << "<td><a href=\"" << entry << "\">" << entry << "</a></td>"
+           << "<td>" << stat->st_size << "</td>";
     }
+    if (stat != NULL) {
+        char time_str[MAX_TIME_LEN];
+        struct tm localtime;
+        localtime_r(&(stat->st_mtime), &localtime);
+        strftime(time_str, MAX_TIME_LEN, "%F %T", &localtime);
+        ss << "<td>" << time_str << "</td>";
+    }
+    ss << "</tr>" << std::endl;
 }
 
 void
@@ -375,40 +393,42 @@ StaticHttpHandler::respond_directory_list(const std::string& path,
                                           HttpRequest& request,
                                           HttpResponse& response)
 {
-    std::stringstream ss;
-    ss << "<html><head><title>Directory List " << href_path << "</title>";
-    // TOOD: add custom css if needed
-    ss << "</head><body>" << std::endl;
     DIR* dirp = opendir(path.c_str());
     if (!dirp) {
         respond_error(HttpResponseStatus::kHttpResponseForbidden,
                       request, response);
         return;
     }
+    std::stringstream ss;
+    ss << "<html><head><title>Directory List " << href_path << "</title>"
+       << std::endl;
+    if (index_page_css_ != "") {
+        ss << "<link rel=\"stylesheet\" type=\"text/css\" href=\""
+           << index_page_css_ << "\"/>" << std::endl;
+    }
+    ss << "</head><body>" << std::endl
+       << "<h1>Index of " << href_path << "</h1>" << std::endl
+       << "<table>" << std::endl;
+
     if (href_path != "/") {
-        add_directory_entry(ss, "..", kEntryTypeDirectory);
+        add_directory_entry(ss, "..", NULL);
     }
     dirent* ent = NULL;
+    ss << "<table>";
     while ((ent = readdir(dirp))) {
         std::string ent_name = ent->d_name;
         std::string ent_path = path + "/" + ent->d_name;
         struct stat64 buf;
-        int ent_type = -1;
         if (ent_name == "." || ent_name == "..") {
             continue;
         }
         if (::stat64(ent_path.c_str(), &buf) < 0) {
             continue;
         }
-        if (S_ISREG(buf.st_mode)) {
-            ent_type = kEntryTypeFile;
-        } else if (S_ISDIR(buf.st_mode)) {
-            ent_type = kEntryTypeDirectory;
-        }
-        add_directory_entry(ss, ent_name, ent_type);
+        add_directory_entry(ss, ent_name, &buf);
     }
     closedir(dirp);
-    ss << "</body></html>" << std::endl;
+    ss << "</table></body></html>" << std::endl;
     response.add_header("Content-Type", "text/html");
     if (request.method() != HTTP_HEAD) {
         response.write_string(ss.str());
@@ -423,9 +443,39 @@ StaticHttpHandler::respond_error(const HttpResponseStatus& error,
                                  HttpRequest& request,
                                  HttpResponse& response)
 {
-    // TODO: custom error page
-    response.write_string(error.reason);
+    LOG(WARNING, "%d with %s", error.status_code, request.uri().c_str());
+    response.add_header("Content-Type", "text/html");
+
+    std::stringstream ss;
+    std::string path;
+    int file_desc = -1;
+    struct stat64 buf;
+
+    if (error_root_ == "") {
+        goto default_resp;
+    }
+    ss << error_root_ << "/" << error.status_code << ".html";
+    path = ss.str();
+    file_desc = ::open(path.c_str(), O_RDONLY);
+    if (file_desc < 0) {
+        goto default_resp;
+    }
+    if (fstat64(file_desc, &buf) < 0) {
+        ::close(file_desc);
+        goto default_resp;
+    }
+    response.set_content_length(buf.st_size);
     response.respond(error);
+    response.write_file(file_desc, 0, -1);
+    return;
+default_resp:
+    ss.clear();
+    ss << "<html><head><title>" << error.reason << "</title></head><body>"
+       << "<h1>" << error.status_code << " - " << error.reason << "</h1>"
+       << "</body></html>" << std::endl;
+    response.write_string(ss.str());
+    response.respond(error);
+    return;
 }
 
 void
@@ -433,7 +483,6 @@ StaticHttpHandler::handle_request(HttpRequest& request, HttpResponse& response)
 {
     std::string filename = HttpRequest::url_decode(request.path());
     filename = remove_path_dots(filename);
-    LOG(DEBUG, "%s requested", filename.c_str());
 
     if (request.method() != HTTP_GET && request.method() != HTTP_POST
         && request.method() != HTTP_HEAD) {
@@ -444,6 +493,7 @@ StaticHttpHandler::handle_request(HttpRequest& request, HttpResponse& response)
     struct stat64 buf;
     std::string filepath = doc_root_ + filename;
     if (::stat64(filepath.c_str(), &buf) < 0) {
+        LOG(DEBUG, "Cannot stat file %s", filepath.c_str());
         respond_error(HttpResponseStatus::kHttpResponseNotFound,
                       request, response);
         return;
@@ -452,7 +502,12 @@ StaticHttpHandler::handle_request(HttpRequest& request, HttpResponse& response)
     if (S_ISREG(buf.st_mode)) {
         respond_file_content(filepath, buf, request, response);
     } else if (S_ISDIR(buf.st_mode)) {
-        respond_directory_list(filepath, filename, request, response);
+        if (allow_index_) {
+            respond_directory_list(filepath, filename, request, response);
+        } else {
+            respond_error(HttpResponseStatus::kHttpResponseForbidden,
+                          request, response);
+        }
     } else {
         respond_error(HttpResponseStatus::kHttpResponseForbidden,
                       request, response);

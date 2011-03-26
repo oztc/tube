@@ -20,7 +20,6 @@ struct IOCacheEntry
     size_t size;
 
     IOCacheEntry(const std::string& file_path, time_t mtime, size_t file_size);
-
     virtual ~IOCacheEntry();
 
     byte* data_copy();
@@ -32,6 +31,8 @@ class IOCache
     typedef std::map<std::string, EntryList::iterator> EntryMap;
 
     size_t max_cache_entry_;
+    size_t max_entry_size_;
+
     EntryList entries_;
     EntryMap entry_map_;
 
@@ -40,10 +41,14 @@ public:
     IOCache();
 
     void set_max_cache_entry(size_t nentry) { max_cache_entry_ = nentry; }
+    void set_max_entry_size(size_t size) { max_entry_size_ = size; }
 
     byte* access_cache(const std::string& file_path, time_t mtime,
                        size_t file_size);
 private:
+    IOCacheEntry* create_cache_entry(const std::string& file_path, time_t mtime,
+                                     size_t file_size);
+
     byte* load_cache(const std::string& file_path, time_t mtime,
                      size_t file_size);
 

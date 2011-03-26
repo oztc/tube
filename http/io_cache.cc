@@ -2,15 +2,12 @@
 
 namespace pipeserv {
 
-// 4k, eliminates tail packing cost for filesystem
 const size_t IOCacheEntry::kCacheEntryMaxSize = 4096;
 
 IOCacheEntry::IOCacheEntry(const std::string& file_path, time_t mtime,
                            size_t file_size)
     : path(file_path), last_mtime(0), file_content(NULL), size(file_size)
 {
-    if (file_size > kCacheEntryMaxSize)
-        return;
     int file_desc = ::open(path.c_str(), O_RDONLY);
     if (file_desc < 0)
         return;
@@ -48,7 +45,7 @@ IOCacheEntry::data_copy()
 }
 
 IOCache::IOCache()
-    : max_cache_entry_(0)
+    : max_cache_entry_(0), max_entry_size_(4096) // 4K by default
 {
 }
 
@@ -90,10 +87,11 @@ IOCache::remove_entry(EntryMap::iterator map_it)
     delete entry;
 }
 
-static IOCacheEntry*
-create_cache_entry(const std::string& file_path, time_t mtime, size_t file_size)
+IOCacheEntry*
+IOCache::create_cache_entry(const std::string& file_path, time_t mtime,
+                            size_t file_size)
 {
-    if (file_size >= IOCacheEntry::kCacheEntryMaxSize)
+    if (file_size >= max_entry_size_)
         return NULL;
     IOCacheEntry* entry = new IOCacheEntry(file_path, mtime, file_size);
     if (entry->file_content == NULL) {
@@ -131,13 +129,12 @@ IOCache::load_cache(const std::string& file_path, time_t mtime,
 
     mutex_.unlock();
     IOCacheEntry* entry = create_cache_entry(file_path, mtime, file_size);
-    if (entry != NULL) {
-        utils::Lock lk(mutex_);
-        add_entry(entry);
-        return entry->data_copy();
-    } else {
+    if (entry == NULL) {
         return NULL;
     }
+    utils::Lock lk(mutex_);
+    add_entry(entry);
+    return entry->data_copy();
 }
 
 byte*

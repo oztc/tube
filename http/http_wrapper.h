@@ -32,6 +32,8 @@ public:
     short       version_minor() const { return request_.version_minor; }
     bool        keep_alive() const { return request_.keep_alive; }
 
+    void set_uri(std::string uri) { request_.uri = uri; }
+
     const HttpHeaderEnumerate& headers() const { return request_.headers; }
     HttpHeaderEnumerate& headers() { return request_.headers; }
 

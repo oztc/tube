@@ -47,5 +47,27 @@ get_thread_id()
 #endif
 }
 
+bool
+ignore_compare(const std::string& p, const std::string& q)
+{
+    if (p.length() != q.length())
+        return false;
+    for (size_t i = 0; i < p.length(); i++) {
+        if (p[i] != q[i] && abs(p[i] - q[i]) != 'a' - 'A')
+            return false;
+    }
+    return true;
+}
+
+bool
+parse_bool(std::string str)
+{
+    if (ignore_compare(str, "on") || ignore_compare(str, "true")) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
 }
 }

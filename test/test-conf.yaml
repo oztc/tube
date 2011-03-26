@@ -5,10 +5,24 @@ handlers:
   - name: default
     module: static
     doc_root: /mnt/data/picture
-    cache_size: 1024
+    error_root: data/pages/error
+    index_page_css: /index_theme/plain.css
+    max_cache_entry: 1024
+    max_entry_size: 16384
+  - name: theme_static
+    module: static
+    doc_root: data/style
+    allow_index: false
+    max_cache_entry: 64
+    max_entry_size: 16384
 
 host:
   domain: default
   url-rules:
-    .+: 
-      - default
+    - type: prefix
+      prefix: /index_theme
+      chain: 
+        - theme_static
+    - type: none
+      chain:
+        - default

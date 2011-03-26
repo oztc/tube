@@ -4,10 +4,9 @@
 #define _CONFIGURATION_H_
 
 #include <yaml-cpp/yaml.h>
-#include <boost/function.hpp>
-#include <boost/xpressive/xpressive.hpp>
 
 #include "http/interface.h"
+#include "http/connection.h"
 
 namespace pipeserv {
 
@@ -38,13 +37,16 @@ private:
     HandlerMap handlers_;
 };
 
+class UrlRuleItemMatcher;
+
 struct UrlRuleItem
 {
-    boost::xpressive::sregex regex;
     typedef std::list<BaseHttpHandler*> HandlerChain;
     HandlerChain handlers;
+    UrlRuleItemMatcher* matcher;
 
-    UrlRuleItem(std::string regex);
+    UrlRuleItem(const std::string& type, const Node& subdoc);
+    virtual ~UrlRuleItem();
 };
 
 class UrlRuleConfig
@@ -53,9 +55,9 @@ public:
     UrlRuleConfig();
     ~UrlRuleConfig();
     void load_url_rules(const Node& subdoc);
-    void load_url_rule(std::string regex, const Node& subdoc);
+    void load_url_rule(const Node& subdoc);
 
-    const UrlRuleItem* match_uri(std::string url) const;
+    const UrlRuleItem* match_uri(HttpRequestData& req_ref) const;
 
 private:
     std::vector<UrlRuleItem> rules_;
@@ -74,7 +76,8 @@ public:
     }
 
     void load_vhost_rules(const Node& subdoc);
-    const UrlRuleItem* match_uri(std::string host, std::string uri) const;
+    const UrlRuleItem* match_uri(const std::string& host,
+                                 HttpRequestData& req_ref) const;
 };
 
 class ServerConfig
