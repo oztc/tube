@@ -171,7 +171,7 @@ PollInStage::cleanup_connection(Connection* conn)
 
     if (!conn->inactive) {
         conn->inactive = true;
-        shutdown(conn->fd, SHUT_RDWR);
+        ::shutdown(conn->fd, SHUT_RDWR);
         sched_remove(conn);
         recycle_stage_->sched_add(conn);
     }

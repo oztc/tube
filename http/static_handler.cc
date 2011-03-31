@@ -116,7 +116,7 @@ build_last_modified(const time_t* last_modified_time)
     struct tm gmt;
     gmtime_r(last_modified_time, &gmt); // thread safe
     char time_str[MAX_TIME_LEN];
-    strftime(time_str, MAX_TIME_LEN, "%a, %.2d %b %Y %T GMT", &gmt);
+    strftime(time_str, MAX_TIME_LEN, "%a, %d %b %Y %T GMT", &gmt);
     return std::string(time_str);
 }
 
