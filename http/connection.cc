@@ -43,40 +43,40 @@ HttpRequestData::HttpRequestData()
 {
 }
 
-std::string
+const char*
 HttpRequestData::method_string() const
 {
     switch (method) {
     case HTTP_COPY :
-        return std::string("COPY");
+        return "COPY";
     case HTTP_DELETE:
-        return std::string("DELETE");
+        return "DELETE";
     case HTTP_GET:
-        return std::string("GET");
+        return "GET";
     case HTTP_HEAD:
-        return std::string("HEAD");
+        return "HEAD";
     case HTTP_LOCK:
-        return std::string("LOCK");
+        return "LOCK";
     case HTTP_MKCOL:
-        return std::string("MKCOL");
+        return "MKCOL";
     case HTTP_MOVE:
-        return std::string("MOVE");
+        return "MOVE";
     case HTTP_OPTIONS:
-        return std::string("OPTIONS");
+        return "OPTIONS";
     case HTTP_POST:
-        return std::string("POST");
+        return "POST";
     case HTTP_PROPFIND:
-        return std::string("PROPFIND");
+        return "PROPFIND";
     case HTTP_PROPPATCH:
-        return std::string("PROPFIND");
+        return "PROPFIND";
     case HTTP_PUT:
-        return std::string("PUT");
+        return "PUT";
     case HTTP_TRACE:
-        return std::string("TRACE");
+        return "TRACE";
     case HTTP_UNLOCK:
-        return std::string("UNLOCK");
+        return "UNLOCK";
     default:
-        return std::string();
+        return "";
     }
 }
 
@@ -220,7 +220,7 @@ HttpConnection::finish_parse()
             host = tmp_request_.headers[i].value;
         }
     }
-    LOG(INFO, "[%s] %s from %s",  tmp_request_.method_string().c_str(),
+    LOG(INFO, "[%s] %s from %s",  tmp_request_.method_string(),
         tmp_request_.uri.c_str(), address_string().c_str());
     // matching the rule
     tmp_request_.url_rule = vhost_cfg.match_uri(host, tmp_request_);

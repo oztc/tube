@@ -338,7 +338,7 @@ StaticHttpHandler::respond_file_content(const std::string& path,
         // exceeded file size, this is invalid range
         if ((size_t) (offset + length) > file_size) {
             respond_error(
-                HttpResponseStatus::kHttpResponseRequestedrangenotsatisfiable,
+                HttpResponseStatus::kHttpResponseRequestedRangeNotSatisfiable,
                 request, response);
             goto done;
         }

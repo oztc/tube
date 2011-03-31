@@ -14,16 +14,18 @@ namespace pipeserv {
 class BaseHttpHandler
 {
 public:
+    virtual ~BaseHttpHandler() {}
+
     virtual void handle_request(HttpRequest& request,
                                 HttpResponse& response) = 0;
 
     virtual void load_param() {}
 
-    void set_name(std::string name) { name_ = name; }
-    std::string name() const { return name_; }
+    void set_name(const std::string& name) { name_ = name; }
+    const std::string& name() const { return name_; }
 
-    std::string option(std::string name);
-    void add_option(std::string name, std::string value);
+    std::string option(const std::string& name);
+    void add_option(const std::string& name, const std::string& value);
 
 private:
     typedef std::map<std::string, std::string> OptionMap;
@@ -35,6 +37,8 @@ private:
 class BaseHttpHandlerFactory
 {
 public:
+    static void register_factory(BaseHttpHandlerFactory* factory);
+    virtual ~BaseHttpHandlerFactory() {}
     virtual BaseHttpHandler* create() const = 0;
     virtual std::string module_name() const = 0;
     virtual std::string vender_name() const = 0;

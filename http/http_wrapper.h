@@ -41,6 +41,9 @@ public:
     std::vector<std::string> find_header_values(std::string key) const;
     std::string find_header_value(std::string key) const;
     const UrlRuleItem* url_rule_item() const { return request_.url_rule; }
+
+    // used for C wrapper only
+    const HttpRequestData& request_data_ref() const { return request_; }
 };
 
 struct HttpResponseStatus
@@ -48,7 +51,7 @@ struct HttpResponseStatus
     int         status_code;
     std::string reason;
 
-    HttpResponseStatus(int code, std::string reason);
+    HttpResponseStatus(int code, const std::string& reason);
 
     static const HttpResponseStatus kHttpResponseContinue;
     static const HttpResponseStatus kHttpResponseSwitchingProtocols;
@@ -82,7 +85,7 @@ struct HttpResponseStatus
     static const HttpResponseStatus kHttpResponseRequestEntityTooLarge;
     static const HttpResponseStatus kHttpResponseRequestUriTooLarge;
     static const HttpResponseStatus kHttpResponseUnsupportedMediaType;
-    static const HttpResponseStatus kHttpResponseRequestedrangenotsatisfiable;
+    static const HttpResponseStatus kHttpResponseRequestedRangeNotSatisfiable;
     static const HttpResponseStatus kHttpResponseExpectationFailed;
     static const HttpResponseStatus kHttpResponseInternalServerError;
     static const HttpResponseStatus kHttpResponseNotImplemented;
@@ -98,6 +101,7 @@ protected:
     HttpHeaderEnumerate headers_;
     int64               content_length_;
     Buffer              prepare_buffer_;
+    bool                use_prepare_buffer_;
     bool                has_content_length_;
     bool                is_responded_;
 
@@ -109,10 +113,11 @@ public:
 
     void add_header(std::string key, std::string value);
 
-    void enable_content_length(bool enabled) { has_content_length_ = enabled; }
+    void set_has_content_length(bool enabled) { has_content_length_ = enabled; }
     void set_content_length(int64 content_length) {
         content_length_ = content_length;
     }
+    void disable_prepare_buffer() { use_prepare_buffer_ = false; }
 
     bool has_content_length() const { return has_content_length_; }
     int64 content_length() const { return content_length_; }

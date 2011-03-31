@@ -44,8 +44,7 @@ int
 main(int argc, char *argv[])
 {
     ServerConfig& cfg = ServerConfig::instance();
-    HandlerConfig& handler_cfg = HandlerConfig::instance();
-    handler_cfg.register_handler_factory(&static_handler_factory);
+    BaseHttpHandlerFactory::register_factory(&static_handler_factory);
 
     cfg.load_config_file("./test/test-conf.yaml");
 

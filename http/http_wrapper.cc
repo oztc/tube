@@ -138,7 +138,7 @@ HttpResponseStatus::kHttpResponseUnsupportedMediaType =
     HttpResponseStatus(415, "Unsupported Media Type");
 
 const HttpResponseStatus
-HttpResponseStatus::kHttpResponseRequestedrangenotsatisfiable =
+HttpResponseStatus::kHttpResponseRequestedRangeNotSatisfiable =
     HttpResponseStatus(416, "Requested range not satisfiable");
 
 const HttpResponseStatus
@@ -171,7 +171,8 @@ HttpResponseStatus::kHttpResponseHttpVersionNotSupported =
 
 // end of common http response status definition
 
-HttpResponseStatus::HttpResponseStatus(int code, std::string reason_string)
+HttpResponseStatus::HttpResponseStatus(int code,
+                                       const std::string& reason_string)
     : status_code(code), reason(reason_string)
 {}
 
@@ -241,8 +242,12 @@ HttpResponse::add_header(std::string key, std::string value)
 ssize_t
 HttpResponse::write_data(const byte* ptr, size_t size)
 {
-    prepare_buffer_.append(ptr, size);
-    return size;
+    if (use_prepare_buffer_) {
+        prepare_buffer_.append(ptr, size);
+        return size;
+    } else {
+        return Response::write_data(ptr, size);
+    }
 }
 
 void
@@ -279,6 +284,7 @@ HttpResponse::reset()
     content_length_ = -1;
     headers_.clear();
     has_content_length_ = true;
+    use_prepare_buffer_ = true;
     is_responded_ = false;
 }
 

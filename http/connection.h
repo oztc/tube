@@ -41,7 +41,7 @@ struct HttpRequestData
 
     HttpRequestData();
 
-    std::string method_string() const;
+    const char* method_string() const;
 };
 
 class HttpConnection : public Connection

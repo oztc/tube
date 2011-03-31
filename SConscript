@@ -22,7 +22,8 @@ http_source = ['http/http_parser.c',
                'http/static_handler.cc',
                'http/configuration.cc',
                'http/io_cache.cc',
-               'http/http_stages.cc']
+               'http/http_stages.cc',
+               'http/capi_impl.cc']
 
 epoll_source = ['core/poller_impl/epoll_poller.cc']
 kqueue_source = ['core/poller_impl/kqueue_poller.cc']
