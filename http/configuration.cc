@@ -253,6 +253,9 @@ ServerConfig::load_config_file(const char* filename)
             } else if (key == "handler_stage_pool_size") {
                 it.second() >> value;
                 handler_stage_pool_size_ = atoi(value.c_str());
+            } else if (key == "listen_queue_size") {
+                it.second() >> value;
+                listen_queue_size_ = atoi(value.c_str());
             }
             LOG(INFO, "ignore unsupported key %s", key.c_str());
         }

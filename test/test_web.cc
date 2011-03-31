@@ -75,7 +75,7 @@ main(int argc, char *argv[])
     }
     server.initialize_stages();
     server.start_all_threads();
-    server.listen(128);
+    server.listen(cfg.listen_queue_size());
     server.main_loop();
     return 0;
 }
