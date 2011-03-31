@@ -97,6 +97,9 @@ HttpHandlerStage::process_task(Connection* conn)
                 HttpResponseStatus::kHttpResponseServiceUnavailable);
             continue;
         }
+        if (request.keep_alive() && request.version_minor() == 0) {
+            response.add_header("Connection", "Keep-Alive");
+        }
         for (UrlRuleItem::HandlerChain::iterator it = chain.begin();
              it != chain.end(); ++it) {
             BaseHttpHandler* handler = *it;
