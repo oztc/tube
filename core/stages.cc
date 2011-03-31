@@ -306,8 +306,6 @@ RecycleStage::main_loop()
             } else {
                 if (dead_conns.size() > recycle_batch_size_) {
                     break;
-                } else {
-                    cond_.wait(mutex_);
                 }
             }
         }
