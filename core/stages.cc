@@ -104,6 +104,7 @@ IdleScanner::scan_idle_connection(Poller& poller)
     }
 
     last_scan_time_ = current_time;
+    stage_.recycle_stage_->sched_add(NULL); // add recycle barrier
     stage_.mutex_.unlock();
 }
 
@@ -168,10 +169,12 @@ PollInStage::cleanup_connection(Connection* conn)
 {
     assert(conn);
 
-    shutdown(conn->fd, SHUT_RDWR);
-    conn->inactive = true;
-    sched_remove(conn);
-    recycle_stage_->sched_add(conn);
+    if (!conn->inactive) {
+        conn->inactive = true;
+        shutdown(conn->fd, SHUT_RDWR);
+        sched_remove(conn);
+        recycle_stage_->sched_add(conn);
+    }
 }
 
 void
@@ -271,7 +274,7 @@ RecycleStage::sched_add(Connection* conn)
 {
     utils::Lock lk(mutex_);
     queue_.push(conn);
-    if (queue_.size() >= recycle_batch_size_) {
+    if (conn == NULL) {
         cond_.notify_one();
     }
     return true;
@@ -281,22 +284,32 @@ void
 RecycleStage::main_loop()
 {
     Pipeline& pipeline = Pipeline::instance();
-    Connection* conns[recycle_batch_size_];
+    std::vector<Connection*> dead_conns;
     while (true) {
         mutex_.lock();
-        while (queue_.size() < recycle_batch_size_) {
-            cond_.wait(mutex_);
-        }
-        for (size_t i = 0; i < recycle_batch_size_; i++) {
-            conns[i] = queue_.front();
+        while (true) {
+            if (queue_.empty()) {
+                cond_.wait(mutex_);
+            }
+            Connection* conn = queue_.front();
             queue_.pop();
+            if (conn) {
+                dead_conns.push_back(conn);
+            } else {
+                if (dead_conns.size() > recycle_batch_size_) {
+                    break;
+                } else {
+                    cond_.wait(mutex_);
+                }
+            }
         }
         mutex_.unlock();
 
         utils::XLock lk(pipeline.mutex());
-        for (size_t i = 0; i < recycle_batch_size_; i++) {
-            pipeline.dispose_connection(conns[i]);
+        for (size_t i = 0; i < dead_conns.size(); i++) {
+            pipeline.dispose_connection(dead_conns[i]);
         }
+        dead_conns.clear();
     }
 }
 

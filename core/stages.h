@@ -63,10 +63,9 @@ public:
 
     void cleanup_connection(Connection* conn);
 friend class IdleScanner;
-
 private:
-    void add_poll(Poller* poller);
     void read_connection(Connection* conn);
+    void add_poll(Poller* poller);
     void handle_connection(Connection* conn, PollerEvent evt);
 };
 
