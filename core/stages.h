@@ -34,6 +34,8 @@ public:
     void start_thread();
 };
 
+class IdleScanner;
+
 class PollInStage : public Stage
 {
     utils::Mutex      mutex_;
@@ -67,6 +69,7 @@ private:
     void read_connection(Connection* conn);
     void add_poll(Poller* poller);
     void handle_connection(Connection* conn, PollerEvent evt);
+    void post_handle_connection(IdleScanner& idle_scanner, Poller& poller);
 };
 
 class IdleScanner

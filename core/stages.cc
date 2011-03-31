@@ -104,7 +104,6 @@ IdleScanner::scan_idle_connection(Poller& poller)
     }
 
     last_scan_time_ = current_time;
-    stage_.recycle_stage_->sched_add(NULL); // add recycle barrier
     stage_.mutex_.unlock();
 }
 
@@ -173,6 +172,7 @@ PollInStage::cleanup_connection(Connection* conn)
         conn->inactive = true;
         ::shutdown(conn->fd, SHUT_RDWR);
         sched_remove(conn);
+        ::close(conn->fd);
         recycle_stage_->sched_add(conn);
     }
 }
@@ -210,6 +210,13 @@ PollInStage::handle_connection(Connection* conn, PollerEvent evt)
 }
 
 void
+PollInStage::post_handle_connection(IdleScanner& idle_scanner, Poller& poller)
+{
+    idle_scanner.scan_idle_connection(poller);
+    recycle_stage_->sched_add(NULL); // add recycle barrier
+}
+
+void
 PollInStage::main_loop()
 {
     Poller* poller = PollerFactory::instance().create_poller(poller_name_);
@@ -217,7 +224,8 @@ PollInStage::main_loop()
     Poller::EventCallback evthdl =
         boost::bind(&PollInStage::handle_connection, this, _1, _2);
     Poller::PollerCallback posthdl =
-        boost::bind(&IdleScanner::scan_idle_connection, &idle_scanner, _1);
+        boost::bind(&PollInStage::post_handle_connection, this, idle_scanner,
+                    _1);
 
     poller->set_post_handler(posthdl);
     poller->set_event_handler(evthdl);
