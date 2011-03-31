@@ -251,6 +251,8 @@ WriteBackStage::process_task(Connection* conn)
         sched_add(conn);
         return -1;
     } else {
+        fsync(conn->fd);
+        conn->clear_cork();
         if (conn->close_after_finish) {
             conn->active_close();
         }

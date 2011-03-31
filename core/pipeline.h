@@ -46,6 +46,8 @@ struct Connection
     std::string address_string() const;
     void set_timeout(int sec) { timeout = sec; }
     void set_io_timeout(int msec);
+    void set_cork();
+    void clear_cork();
 
     void active_close();
 

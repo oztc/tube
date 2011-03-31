@@ -2,6 +2,7 @@
 
 #include <ctime>
 #include <unistd.h>
+#include <netinet/tcp.h>
 
 #include "core/pipeline.h"
 #include "core/stages.h"
@@ -18,6 +19,10 @@ Connection::Connection(int sock)
     prio = 0;
     inactive = false;
     last_active = time(NULL);
+
+    // set nodelay
+    int state = 1;
+    setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &state, sizeof(state));
 }
 
 void
@@ -25,6 +30,24 @@ Connection::active_close()
 {
     PollInStage* stage = (PollInStage*) Pipeline::instance().poll_in_stage();
     stage->cleanup_connection(this);
+}
+
+void
+Connection::set_cork()
+{
+    int state = 1;
+    if (setsockopt(fd, IPPROTO_TCP, TCP_CORK, &state, sizeof(state)) < 0) {
+        LOG(WARNING, "Cannot set TCP_CORK on fd %d", fd);
+    }
+}
+
+void
+Connection::clear_cork()
+{
+    int state = 0;
+    if (setsockopt(fd, IPPROTO_TCP, TCP_CORK, &state, sizeof(state)) < 0) {
+        LOG(WARNING, "Cannot clear TCP_CORK on fd %d", fd);
+    }
 }
 
 void

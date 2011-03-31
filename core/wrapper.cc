@@ -57,6 +57,7 @@ Response::Response(Connection* conn)
 Response::~Response()
 {
     if (response_code() < 0) {
+        conn_->set_cork();
         out_stage_->sched_add(conn_); // silently flush
     }
 }
