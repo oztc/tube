@@ -259,7 +259,6 @@ WriteBackStage::process_task(Connection* conn)
         sched_add(conn);
         return -1;
     } else {
-        fsync(conn->fd);
         conn->clear_cork();
         if (conn->close_after_finish) {
             conn->active_close();
@@ -298,7 +297,7 @@ RecycleStage::main_loop()
     while (true) {
         mutex_.lock();
         while (true) {
-            if (queue_.empty()) {
+            while (queue_.empty()) {
                 cond_.wait(mutex_);
             }
             Connection* conn = queue_.front();

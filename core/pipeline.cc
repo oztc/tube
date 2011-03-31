@@ -48,6 +48,7 @@ Connection::clear_cork()
     if (setsockopt(fd, IPPROTO_TCP, TCP_CORK, &state, sizeof(state)) < 0) {
         LOG(WARNING, "Cannot clear TCP_CORK on fd %d", fd);
     }
+    ::fsync(fd);
 }
 
 void
