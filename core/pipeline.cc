@@ -271,7 +271,7 @@ Pipeline::set_connection_factory(ConnectionFactory* fac)
 }
 
 Stage*
-Pipeline::find_stage(std::string name)
+Pipeline::find_stage(const std::string& name)
 {
     StageMap::iterator it = map_.find(name);
     if (it == map_.end()) {
@@ -309,7 +309,7 @@ Pipeline::dispose_connection(Connection* conn)
 }
 
 void
-Pipeline::add_stage(std::string name, Stage* stage)
+Pipeline::add_stage(const std::string& name, Stage* stage)
 {
     if (name == "poll_in") {
         poll_in_stage_ = (PollInStage*) stage;

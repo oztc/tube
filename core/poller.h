@@ -74,7 +74,7 @@ public:
     std::string default_poller_name() const;
     void        register_poller(const char* name, CreateFunc create_func);
 
-    Poller* create_poller(std::string name);
+    Poller* create_poller(const std::string& name);
     void    destroy_poller(Poller* poller);
 private:
     typedef std::map<std::string, CreateFunc> PollerMap;

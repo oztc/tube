@@ -43,8 +43,8 @@ HandlerConfig::~HandlerConfig()
 }
 
 BaseHttpHandler*
-HandlerConfig::create_handler_instance(std::string name,
-                                       std::string module)
+HandlerConfig::create_handler_instance(const std::string& name,
+                                       const std::string& module)
 {
     HandlerMap::iterator it = handlers_.find(name);
     if (it != handlers_.end()) {
@@ -67,7 +67,7 @@ HandlerConfig::register_handler_factory(const BaseHttpHandlerFactory* factory)
 }
 
 BaseHttpHandler*
-HandlerConfig::get_handler_instance(std::string name) const
+HandlerConfig::get_handler_instance(const std::string& name) const
 {
     HandlerMap::const_iterator it = handlers_.find(name);
     if (it != handlers_.end()) {
@@ -213,6 +213,8 @@ VHostConfig::match_uri(const std::string& host, HttpRequestData& req_ref) const
 }
 
 ServerConfig::ServerConfig()
+    : read_stage_pool_size_(0), write_stage_pool_size_(0),
+      recycle_threshold_(0), handler_stage_pool_size_(0)
 {}
 
 ServerConfig::~ServerConfig()
@@ -229,7 +231,7 @@ ServerConfig::load_config_file(const char* filename)
     Node doc;
     while (parser.GetNextDocument(doc)) {
         for (YAML::Iterator it = doc.begin(); it != doc.end(); ++it) {
-            std::string key;
+            std::string key, value;
             it.first() >> key;
             if (key == "address") {
                 it.second() >> address_;
@@ -239,6 +241,18 @@ ServerConfig::load_config_file(const char* filename)
                 handler_cfg.load_handlers(it.second());
             } else if (key == "host") {
                 host_cfg.load_vhost_rules(it.second());
+            } else if (key == "read_stage_pool_size") {
+                it.second() >> value;
+                read_stage_pool_size_ = atoi(value.c_str());
+            } else if (key == "write_stage_pool_size") {
+                it.second() >> value;
+                write_stage_pool_size_ = atoi(value.c_str());
+            } else if (key == "recycle_threshold") {
+                it.second() >> value;
+                recycle_threshold_ = atoi(value.c_str());
+            } else if (key == "handler_stage_pool_size") {
+                it.second() >> value;
+                handler_stage_pool_size_ = atoi(value.c_str());
             }
             LOG(INFO, "ignore unsupported key %s", key.c_str());
         }

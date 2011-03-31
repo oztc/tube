@@ -126,12 +126,12 @@ public:
 
     utils::RWMutex& mutex() { return mutex_; }
 
-    void add_stage(std::string name, Stage* stage);
+    void add_stage(const std::string& name, Stage* stage);
 
     void set_connection_factory(ConnectionFactory* fac);
 
     PollInStage* poll_in_stage() const { return poll_in_stage_; }
-    Stage* find_stage(std::string name);
+    Stage* find_stage(const std::string& name);
 
     Connection* create_connection(int fd);
     void dispose_connection(Connection* conn);

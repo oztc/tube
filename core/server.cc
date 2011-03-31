@@ -19,8 +19,8 @@ using namespace pipeserv::utils;
 
 namespace pipeserv {
 
-const size_t Server::kDefaultReadStageCount = 1;
-const size_t Server::kDefaultWriteStageCount = 2;
+const size_t Server::kDefaultReadStagePoolSize = 1;
+const size_t Server::kDefaultWriteStagePoolSize = 2;
 
 static struct addrinfo*
 lookup_addr(const char* host, const char* service)
@@ -38,8 +38,8 @@ lookup_addr(const char* host, const char* service)
 }
 
 Server::Server(const char* host, const char* service) throw()
-    : read_stage_cnt_(kDefaultReadStageCount),
-      write_stage_cnt_(kDefaultWriteStageCount)
+    : read_stage_pool_size_(kDefaultReadStagePoolSize),
+      write_stage_pool_size_(kDefaultWriteStagePoolSize)
 {
     struct addrinfo* info = lookup_addr(host, service);
     bool done = false;
@@ -69,7 +69,6 @@ Server::Server(const char* host, const char* service) throw()
     read_stage_ = new PollInStage();
     write_stage_ = new WriteBackStage();
     recycle_stage_ = new RecycleStage();
-
 }
 
 Server::~Server()
@@ -83,17 +82,27 @@ Server::~Server()
 }
 
 void
+Server::set_recycle_threshold(size_t size)
+{
+    recycle_stage_->set_recycle_batch_size(size);
+}
+
+void
 Server::initialize_stages()
 {
     read_stage_->initialize();
     write_stage_->initialize();
     recycle_stage_->initialize();
+}
 
+void
+Server::start_all_threads()
+{
     recycle_stage_->start_thread();
-    for (size_t i = 0; i < read_stage_cnt_; i++) {
+    for (size_t i = 0; i < read_stage_pool_size_; i++) {
         read_stage_->start_thread();
     }
-    for (size_t i = 0; i < write_stage_cnt_; i++) {
+    for (size_t i = 0; i < write_stage_pool_size_; i++) {
         write_stage_->start_thread();
     }
 }

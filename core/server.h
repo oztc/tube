@@ -15,30 +15,30 @@ class Server
     int fd_;
     size_t addr_size_;
 
-    size_t read_stage_cnt_, write_stage_cnt_;
+    size_t read_stage_pool_size_;
+    size_t write_stage_pool_size_;
 protected:
     PollInStage* read_stage_;
     WriteBackStage* write_stage_;
     RecycleStage* recycle_stage_;
 public:
-    static const size_t kDefaultReadStageCount;
-    static const size_t kDefaultWriteStageCount;
+    static const size_t kDefaultReadStagePoolSize;
+    static const size_t kDefaultWriteStagePoolSize;
 public:
     Server(const char* host, const char* service) throw();
     virtual ~Server();
 
     int fd() const { return fd_; }
 
-    size_t read_stage_count() const { return read_stage_cnt_; }
-    size_t write_stage_count() const { return write_stage_cnt_; }
-
-    void set_read_stage_count(size_t val) { read_stage_cnt_ = val; }
-    void set_write_stage_count(size_t val) { write_stage_cnt_ = val; }
+    void set_recycle_threshold(size_t threshold);
+    void set_read_stage_pool_size(size_t val) { read_stage_pool_size_ = val; }
+    void set_write_stage_pool_size(size_t val) { write_stage_pool_size_ = val; }
 
     void initialize_stages();
+    void start_all_threads();
+
     void listen(int queue_size);
     void main_loop();
-
 };
 
 }

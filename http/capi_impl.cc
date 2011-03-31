@@ -1,3 +1,5 @@
+#include "pch.h"
+
 #include "http/capi.h"
 #include "http/interface.h"
 #include "http/configuration.h"

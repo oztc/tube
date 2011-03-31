@@ -102,8 +102,8 @@ class RecycleStage : public Stage
     std::queue<Connection*> queue_;
     size_t                  recycle_batch_size_;
 public:
-    RecycleStage(size_t recycle_batch_size = 1)
-        : Stage("recycle"), recycle_batch_size_(recycle_batch_size) {}
+    RecycleStage()
+        : Stage("recycle"), recycle_batch_size_(1) {}
 
     virtual ~RecycleStage() {}
 
@@ -111,6 +111,7 @@ public:
     virtual void sched_remove(Connection* conn) {}
 
     virtual void main_loop();
+    void set_recycle_batch_size(size_t size) { recycle_batch_size_ = size; }
 };
 
 }

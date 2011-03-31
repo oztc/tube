@@ -77,7 +77,7 @@ PollerFactory::register_poller(const char* name, CreateFunc create_func)
 }
 
 Poller*
-PollerFactory::create_poller(std::string name)
+PollerFactory::create_poller(const std::string& name)
 {
     PollerMap::iterator it = poller_map_.find(name);
     if (it == poller_map_.end() || !(it->second)) {

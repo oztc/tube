@@ -16,18 +16,30 @@ class WebServer : public Server
 {
     HttpParserStage* parser_stage_;
     HttpHandlerStage* handler_stage_;
+    size_t handler_stage_pool_size_;
 public:
     WebServer(const char* address, const char* port) : Server(address, port) {
         utils::logger.set_level(DEBUG);
         parser_stage_ = new HttpParserStage();
         handler_stage_ = new HttpHandlerStage();
+    }
 
-        initialize_stages();
+    void initialize_stages() {
+        Server::initialize_stages();
         parser_stage_->initialize();
         handler_stage_->initialize();
+    }
 
+    void start_all_threads() {
         parser_stage_->start_thread();
-        handler_stage_->start_thread();
+        for (size_t i = 0; i < handler_stage_pool_size_; i++) {
+            handler_stage_->start_thread();
+        }
+        Server::start_all_threads();
+    }
+
+    void set_handler_stage_pool_size(size_t val) {
+        handler_stage_pool_size_ = val;
     }
 
     virtual ~WebServer() {
@@ -47,8 +59,22 @@ main(int argc, char *argv[])
     BaseHttpHandlerFactory::register_factory(&static_handler_factory);
 
     cfg.load_config_file("./test/test-conf.yaml");
-
     WebServer server(cfg.address().c_str(), cfg.port().c_str());
+    if (cfg.read_stage_pool_size() > 0) {
+        server.set_read_stage_pool_size((size_t) cfg.read_stage_pool_size());
+    }
+    if (cfg.write_stage_pool_size() > 0) {
+        server.set_write_stage_pool_size((size_t) cfg.write_stage_pool_size());
+    }
+    if (cfg.recycle_threshold() > 0) {
+        server.set_recycle_threshold((size_t) cfg.recycle_threshold());
+    }
+    if (cfg.handler_stage_pool_size() > 0) {
+        server.set_handler_stage_pool_size(
+            (size_t) cfg.handler_stage_pool_size());
+    }
+    server.initialize_stages();
+    server.start_all_threads();
     server.listen(128);
     server.main_loop();
     return 0;

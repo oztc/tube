@@ -234,7 +234,7 @@ parse_datetime(std::string datetime, struct tm* tm_struct)
 bool
 StaticHttpHandler::validate_client_cache(const std::string& path,
                                          struct stat64 stat,
-                                         std::string etag,
+                                         const std::string& etag,
                                          HttpRequest& request)
 {
     std::string modified_since =

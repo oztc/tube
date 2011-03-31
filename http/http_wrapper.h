@@ -111,7 +111,7 @@ public:
 
     HttpResponse(Connection* conn);
 
-    void add_header(std::string key, std::string value);
+    void add_header(const std::string& key, const std::string& value);
 
     void set_has_content_length(bool enabled) { has_content_length_ = enabled; }
     void set_content_length(int64 content_length) {

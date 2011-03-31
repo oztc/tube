@@ -24,9 +24,9 @@ public:
 
     void register_handler_factory(const BaseHttpHandlerFactory* factory);
 
-    BaseHttpHandler* create_handler_instance(std::string name,
-                                             std::string module);
-    BaseHttpHandler* get_handler_instance(std::string name) const;
+    BaseHttpHandler* create_handler_instance(const std::string& name,
+                                             const std::string& module);
+    BaseHttpHandler* get_handler_instance(const std::string& name) const;
 
     void load_handlers(const Node& subdoc);
     void load_handler(const Node& subdoc);
@@ -94,10 +94,19 @@ public:
 
     std::string address() const { return address_; }
     std::string port() const { return port_; }
+    int read_stage_pool_size() const { return read_stage_pool_size_; }
+    int write_stage_pool_size() const {   return write_stage_pool_size_; }
+    int recycle_threshold() const { return recycle_threshold_; }
+    int handler_stage_pool_size() const { return handler_stage_pool_size_; }
+
 private:
     std::string address_;
     std::string port_; // port can be a server, keep it as a string
 
+    int read_stage_pool_size_;
+    int write_stage_pool_size_;
+    int recycle_threshold_;
+    int handler_stage_pool_size_;
 };
 
 }

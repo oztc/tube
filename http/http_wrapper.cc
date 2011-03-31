@@ -230,7 +230,7 @@ HttpResponse::HttpResponse(Connection* conn) : Response(conn)
 }
 
 void
-HttpResponse::add_header(std::string key, std::string value)
+HttpResponse::add_header(const std::string& key, const std::string& value)
 {
     if (utils::ignore_compare(key, std::string("content-length"))) {
         content_length_ = atoll(value.c_str());
