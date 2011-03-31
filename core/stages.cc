@@ -172,7 +172,6 @@ PollInStage::cleanup_connection(Connection* conn)
         conn->inactive = true;
         ::shutdown(conn->fd, SHUT_RDWR);
         sched_remove(conn);
-        ::close(conn->fd);
         recycle_stage_->sched_add(conn);
     }
 }

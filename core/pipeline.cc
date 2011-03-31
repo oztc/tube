@@ -303,6 +303,7 @@ Pipeline::dispose_connection(Connection* conn)
         }
         ++it;
     }
+    ::close(conn->fd);
     conn->unlock();
     factory_->destroy_connection(conn);
     LOG(DEBUG, "disposed");
