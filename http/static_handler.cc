@@ -287,6 +287,7 @@ send_client_data(HttpResponse& response, const HttpResponseStatus& status,
                  off64_t length)
 {
     if (cached_entry) {
+        ::close(file_desc);
         response.write_data(cached_entry + offset, length);
         response.respond(status);
     } else {
