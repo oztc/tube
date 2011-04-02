@@ -13,7 +13,7 @@
     do {                                                                \
         char str[MAX_LOG_LENGTH];                                       \
         snprintf(str, MAX_LOG_LENGTH, __VA_ARGS__);                     \
-        pipeserv::utils::logger.log(level, str, __FILE__, __LINE__);    \
+        tube::utils::logger.log(level, str, __FILE__, __LINE__);    \
     } while (0)                                                         \
 
 #else
@@ -25,7 +25,7 @@
 #define INFO    2
 #define DEBUG   3
 
-namespace pipeserv {
+namespace tube {
 namespace utils {
 
 struct LogWriter

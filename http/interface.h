@@ -8,7 +8,7 @@
 
 #include "http/http_wrapper.h"
 
-namespace pipeserv {
+namespace tube {
 
 // gateway interface
 class BaseHttpHandler

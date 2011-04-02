@@ -8,7 +8,7 @@
 #include "http/interface.h"
 #include "http/connection.h"
 
-namespace pipeserv {
+namespace tube {
 
 typedef YAML::Node Node;
 

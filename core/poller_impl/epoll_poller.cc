@@ -14,7 +14,7 @@
 #include "utils/logger.h"
 #include "core/poller.h"
 
-namespace pipeserv {
+namespace tube {
 
 class EpollPoller : public Poller
 {

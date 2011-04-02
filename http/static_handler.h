@@ -10,7 +10,7 @@
 #include "http/interface.h"
 #include "http/io_cache.h"
 
-namespace pipeserv {
+namespace tube {
 
 class StaticHttpHandler : public BaseHttpHandler
 {
@@ -55,7 +55,7 @@ public:
         return std::string("static");
     }
     virtual std::string vender_name() const {
-        return std::string("pipeserv");
+        return std::string("tube");
     }
 };
 

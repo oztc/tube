@@ -3,7 +3,7 @@
 #include "http/configuration.h"
 #include "http/interface.h"
 
-namespace pipeserv {
+namespace tube {
 
 void
 BaseHttpHandler::add_option(const std::string& name, const std::string& value)

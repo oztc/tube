@@ -15,9 +15,9 @@
 #include "utils/logger.h"
 #include "utils/misc.h"
 
-using namespace pipeserv::utils;
+using namespace tube::utils;
 
-namespace pipeserv {
+namespace tube {
 
 const size_t Server::kDefaultReadStagePoolSize = 1;
 const size_t Server::kDefaultWriteStagePoolSize = 2;

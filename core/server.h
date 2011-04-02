@@ -8,7 +8,7 @@
 
 #include "core/stages.h"
 
-namespace pipeserv {
+namespace tube {
 
 class Server
 {

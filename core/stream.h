@@ -5,7 +5,7 @@
 
 #include "core/buffer.h"
 
-namespace pipeserv {
+namespace tube {
 
 class InputStream
 {

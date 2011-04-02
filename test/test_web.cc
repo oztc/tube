@@ -10,7 +10,7 @@
 #include "core/wrapper.h"
 #include "utils/logger.h"
 
-using namespace pipeserv;
+using namespace tube;
 
 class WebServer : public Server
 {

@@ -12,7 +12,7 @@
 
 #include "utils/misc.h"
 
-namespace pipeserv {
+namespace tube {
 
 class Writeable
 {

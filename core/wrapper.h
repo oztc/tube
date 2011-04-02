@@ -8,7 +8,7 @@
 
 #include "pipeline.h"
 
-namespace pipeserv {
+namespace tube {
 
 class Stage;
 

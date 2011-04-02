@@ -7,7 +7,7 @@
 #include "http/static_handler.h"
 #include "utils/logger.h"
 
-namespace pipeserv {
+namespace tube {
 
 // remove all . and .. directory access
 static std::string

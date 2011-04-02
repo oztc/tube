@@ -8,9 +8,9 @@
 #include "utils/exception.h"
 #include "utils/logger.h"
 
-using namespace pipeserv::utils;
+using namespace tube::utils;
 
-namespace pipeserv {
+namespace tube {
 
 const size_t Buffer::kPageSize = 8192;
 

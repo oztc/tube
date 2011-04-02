@@ -6,7 +6,7 @@
 #include "core/stages.h"
 #include "http/interface.h"
 
-namespace pipeserv {
+namespace tube {
 
 class HttpParserStage : public ParserStage
 {

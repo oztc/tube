@@ -22,7 +22,7 @@
 #include "utils/exception.h"
 #include "utils/logger.h"
 
-namespace pipeserv {
+namespace tube {
 
 FileSender::FileSender(int file_desc, off64_t offset, off64_t length)
     : file_fd_(file_desc), offset_(offset), length_(length)

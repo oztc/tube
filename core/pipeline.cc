@@ -9,7 +9,7 @@
 #include "utils/logger.h"
 #include "utils/misc.h"
 
-namespace pipeserv {
+namespace tube {
 
 Connection::Connection(int sock)
     : in_stream(sock), out_stream(sock), close_after_finish(false)

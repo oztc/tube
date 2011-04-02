@@ -7,7 +7,7 @@
 #include "core/pipeline.h"
 #include "utils/misc.h"
 
-namespace pipeserv {
+namespace tube {
 
 struct HttpHeaderItem
 {

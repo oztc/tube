@@ -5,7 +5,7 @@
 #include "http/configuration.h"
 #include "utils/logger.h"
 
-namespace pipeserv {
+namespace tube {
 
 void
 HandlerConfig::load_handlers(const Node& subdoc)

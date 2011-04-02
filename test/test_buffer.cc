@@ -1,6 +1,6 @@
 #include "core/buffer.h"
 
-using namespace pipeserv;
+using namespace tube;
 
 void
 test_cow()

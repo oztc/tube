@@ -67,11 +67,11 @@ PassEnv('CXXFLAGS', 'CXXFLAGS')
 PassEnv('LDFLAGS', 'LINKFLAGS')
 
 env.Command('http/http_parser.c', 'http/http_parser.rl', 'ragel -s -G2 $SOURCE -o $TARGET')
-libpipeserv = env.SharedLibrary('pipeserv', source=source)
-libpipeserv_web = env.SharedLibrary('pipeserv_web', source=http_source)
+libtube = env.SharedLibrary('tube', source=source)
+libtube_web = env.SharedLibrary('tube_web', source=http_source)
 
 def GenTestProg(name, src):
-    ldflags = [libpipeserv, libpipeserv_web]
+    ldflags = [libtube, libtube_web]
     if GetOS() == 'Linux':
         ldflags.append('-Wl,-rpath=.')
     env.Program(name, source=src, LINKFLAGS=[env['LINKFLAGS']] + ldflags)

@@ -3,7 +3,7 @@
 #include "core/inet_address.h"
 #include "utils/exception.h"
 
-namespace pipeserv {
+namespace tube {
 
 InternetAddress::InternetAddress()
 {

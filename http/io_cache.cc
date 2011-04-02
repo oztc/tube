@@ -1,6 +1,6 @@
 #include "io_cache.h"
 
-namespace pipeserv {
+namespace tube {
 
 const size_t IOCacheEntry::kCacheEntryMaxSize = 4096;
 

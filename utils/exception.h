@@ -8,7 +8,7 @@
 #include <cstring>
 #include <errno.h>
 
-namespace pipeserv {
+namespace tube {
 namespace utils {
 
 class SyscallException : public std::exception

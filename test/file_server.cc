@@ -10,7 +10,7 @@
 #include "core/server.h"
 #include "core/wrapper.h"
 
-using namespace pipeserv;
+using namespace tube;
 
 class FilenameRequest : public Request
 {

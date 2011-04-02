@@ -5,7 +5,7 @@
 #include "core/stages.h"
 #include "core/wrapper.h"
 
-namespace pipeserv {
+namespace tube {
 
 Wrapper::Wrapper(Connection* conn)
     : conn_(conn), pipeline_(Pipeline::instance())

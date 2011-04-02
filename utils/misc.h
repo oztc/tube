@@ -16,7 +16,7 @@
 #include <boost/thread.hpp>
 #include <boost/noncopyable.hpp>
 
-namespace pipeserv {
+namespace tube {
 
 // only for LP/LLP64 model
 typedef unsigned char byte;

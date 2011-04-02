@@ -8,7 +8,7 @@
 
 #include "core/buffer.h"
 
-namespace pipeserv {
+namespace tube {
 
 class FileSender : public Writeable
 {

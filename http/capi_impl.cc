@@ -4,19 +4,19 @@
 #include "http/interface.h"
 #include "http/configuration.h"
 
-typedef pipeserv::BaseHttpHandler* http_handler_handle_t;
+typedef tube::BaseHttpHandler* tube_http_handler_handle_t;
 
-#define HTTP_REQUEST(ptr) ((pipeserv::HttpRequest*) (ptr))
-#define HTTP_RESPONSE(ptr) ((pipeserv::HttpResponse*) (ptr))
-#define HANDLER_IMPL(ptr) ((pipeserv::CHttpHandlerAdapter*) (ptr))
+#define HTTP_REQUEST(ptr) ((tube::HttpRequest*) (ptr))
+#define HTTP_RESPONSE(ptr) ((tube::HttpResponse*) (ptr))
+#define HANDLER_IMPL(ptr) ((tube::CHttpHandlerAdapter*) (ptr))
 
-namespace pipeserv {
+namespace tube {
 
 class CHttpHandlerAdapter : public BaseHttpHandler
 {
-    http_handler_t* handler_;
+    tube_http_handler_t* handler_;
 public:
-    CHttpHandlerAdapter(http_handler_t* handler) : handler_(handler) {
+    CHttpHandlerAdapter(tube_http_handler_t* handler) : handler_(handler) {
         handler_->handle = this;
     }
 
@@ -33,9 +33,10 @@ public:
 
 class CHttpHandlerFactoryAdapter : public BaseHttpHandlerFactory
 {
-    http_handler_descriptor_t* desc_;
+    tube_http_handler_descriptor_t* desc_;
 public:
-    CHttpHandlerFactoryAdapter(http_handler_descriptor_t* desc) : desc_(desc) {}
+    CHttpHandlerFactoryAdapter(tube_http_handler_descriptor_t* desc)
+        : desc_(desc) {}
 
     virtual BaseHttpHandler* create() const {
         return new CHttpHandlerAdapter(desc_->create_handler());
@@ -55,42 +56,43 @@ public:
 #define EXPORT_API extern "C"
 
 EXPORT_API const char*
-http_handler_get_name(http_handler_t* handler)
+tube_http_handler_get_name(tube_http_handler_t* handler)
 {
     return HANDLER_IMPL(handler->handle)->name().c_str();
 }
 
 EXPORT_API void
-http_handler_option(http_handler_t* handler, const char* name, char* value)
+tube_http_handler_option(tube_http_handler_t* handler, const char* name,
+                         char* value)
 {
     std::string str = HANDLER_IMPL(handler->handle)->option(name);
     strncpy(value, str.c_str(), MAX_OPTION_LEN);
 }
 
 EXPORT_API void
-http_handler_add_option(http_handler_t* handler, const char* name,
-                        const char* value)
+tube_http_handler_add_option(tube_http_handler_t* handler, const char* name,
+                             const char* value)
 {
     HANDLER_IMPL(handler->handle)->add_option(name, value);
 }
 
 EXPORT_API void
-http_handler_descriptor_register(http_handler_descriptor_t* desc)
+tube_http_handler_descriptor_register(tube_http_handler_descriptor_t* desc)
 {
-    pipeserv::BaseHttpHandlerFactory::register_factory(
-        new pipeserv::CHttpHandlerFactoryAdapter(desc));
+    tube::BaseHttpHandlerFactory::register_factory(
+        new tube::CHttpHandlerFactoryAdapter(desc));
 }
 
 // request api
 #define REQ_DATA(request) ((request)->request_data_ref())
 
 #define DEF_PRIMITIVE(type, name)                                       \
-    extern "C" type http_request_get_##name(http_request_t* req) {    \
+    extern "C" type tube_http_request_get_##name(tube_http_request_t* req) { \
         return HTTP_REQUEST(req)->name(); }                             \
 
 #define DEF_DATA(type, name, mem)                                       \
-    extern "C" type http_request_get_##name(http_request_t* req) {    \
-        return REQ_DATA(HTTP_REQUEST(req)).mem; }                     \
+    extern "C" type tube_http_request_get_##name(tube_http_request_t* req) { \
+        return REQ_DATA(HTTP_REQUEST(req)).mem; }                       \
 
 DEF_PRIMITIVE(short, method);
 DEF_PRIMITIVE(u64, content_length);
@@ -106,15 +108,16 @@ DEF_DATA(const char*, fragment, fragment.c_str());
 DEF_DATA(const char*, method_string, method_string());
 
 EXPORT_API void
-http_request_set_uri(http_request_t* request, const char* uri)
+tube_http_request_set_uri(tube_http_request_t* request, const char* uri)
 {
     HTTP_REQUEST(request)->set_uri(std::string(uri));
 }
 
 EXPORT_API const char*
-http_request_find_header_value(http_request_t* request, const char* key)
+tube_http_request_find_header_value(tube_http_request_t* request,
+                                    const char* key)
 {
-    pipeserv::HttpHeaderEnumerate& headers = HTTP_REQUEST(request)->headers();
+    tube::HttpHeaderEnumerate& headers = HTTP_REQUEST(request)->headers();
     for (size_t i = 0; i < headers.size(); i++) {
         if (headers[i].key == key) {
             return headers[i].value.c_str();
@@ -124,16 +127,17 @@ http_request_find_header_value(http_request_t* request, const char* key)
 }
 
 EXPORT_API int
-http_request_has_header(http_request_t* request, const char* key)
+tube_http_request_has_header(tube_http_request_t* request, const char* key)
 {
-    return http_request_find_header_value(request, key) != NULL;
+    return tube_http_request_find_header_value(request, key) != NULL;
 }
 
 
 EXPORT_API size_t
-http_request_find_header_values(http_request_t* request, const char* key,
-                                char res[][MAX_HEADER_VALUE_LEN],
-                                size_t max_value_num)
+tube_http_request_find_header_values(tube_http_request_t* request,
+                                     const char* key,
+                                     char res[][MAX_HEADER_VALUE_LEN],
+                                     size_t max_value_num)
 {
     std::vector<std::string> values =
         HTTP_REQUEST(request)->find_header_values(key);
@@ -146,86 +150,89 @@ http_request_find_header_values(http_request_t* request, const char* key,
 }
 
 EXPORT_API ssize_t
-http_request_read_data(http_request_t* request, void* ptr, size_t size)
+tube_http_request_read_data(tube_http_request_t* request, void* ptr,
+                            size_t size)
 {
-    return HTTP_REQUEST(request)->read_data((pipeserv::byte*) ptr, size);
+    return HTTP_REQUEST(request)->read_data((tube::byte*) ptr, size);
 }
 
 // response api
 EXPORT_API void
-http_response_add_header(http_response_t* response, const char* key,
-                         const char* value)
+tube_http_response_add_header(tube_http_response_t* response, const char* key,
+                              const char* value)
 {
     HTTP_RESPONSE(response)->add_header(key, value);
 }
 
 EXPORT_API void
-http_response_set_has_content_length(http_response_t* response, int val)
+tube_http_response_set_has_content_length(tube_http_response_t* response,
+                                          int val)
 {
     HTTP_RESPONSE(response)->set_has_content_length(val);
 }
 
 EXPORT_API int
-http_response_has_content_length(http_response_t* response)
+tube_http_response_has_content_length(tube_http_response_t* response)
 {
     return HTTP_RESPONSE(response)->has_content_length();
 }
 
 EXPORT_API void
-http_response_set_content_length(http_response_t* response, u64 length)
+tube_http_response_set_content_length(tube_http_response_t* response,
+                                      u64 length)
 {
     HTTP_RESPONSE(response)->set_content_length(length);
 }
 
 EXPORT_API u64
-http_response_get_content_length(http_response_t* response)
+tube_http_response_get_content_length(tube_http_response_t* response)
 {
     return HTTP_RESPONSE(response)->content_length();
 }
 
 EXPORT_API void
-http_response_disable_prepare_buffer(http_response_t* response)
+tube_http_response_disable_prepare_buffer(tube_http_response_t* response)
 {
     HTTP_RESPONSE(response)->disable_prepare_buffer();
 }
 
 EXPORT_API ssize_t
-http_response_write_data(http_response_t* response, const void* ptr,
-                         size_t size)
+tube_http_response_write_data(tube_http_response_t* response, const void* ptr,
+                              size_t size)
 {
-    return HTTP_RESPONSE(response)->write_data((const pipeserv::byte*) ptr,
+    return HTTP_RESPONSE(response)->write_data((const tube::byte*) ptr,
                                                size);
 }
 
 EXPORT_API ssize_t
-http_response_write_string(http_response_t* response, const char* str)
+tube_http_response_write_string(tube_http_response_t* response, const char* str)
 {
     return HTTP_RESPONSE(response)->write_string(str);
 }
 
 EXPORT_API void
-http_response_write_file(http_response_t* response, int file_desc,
-                         off64_t offset, off64_t length)
+tube_http_response_write_file(tube_http_response_t* response, int file_desc,
+                              off64_t offset, off64_t length)
 {
     HTTP_RESPONSE(response)->write_file(file_desc, offset, length);
 }
 
 EXPORT_API void
-http_response_flush_data(http_response_t* response)
+tube_http_response_flush_data(tube_http_response_t* response)
 {
     HTTP_RESPONSE(response)->flush_data();
 }
 
 EXPORT_API void
-http_response_close(http_response_t* response)
+tube_http_response_close(tube_http_response_t* response)
 {
     HTTP_RESPONSE(response)->close();
 }
 
 EXPORT_API void
-http_response_respond(http_response_t* response, int status_code,
-                      const char* reason)
+tube_http_response_respond(tube_http_response_t* response, int status_code,
+                           const char* reason)
 {
-    HTTP_RESPONSE(response)->respond(pipeserv::HttpResponseStatus(status_code,
-                                                                  reason));
+    HTTP_RESPONSE(response)->respond(tube::HttpResponseStatus(status_code,
+                                                              reason));
 }

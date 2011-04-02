@@ -16,7 +16,7 @@
 #include "core/stream.h"
 #include "core/inet_address.h"
 
-namespace pipeserv {
+namespace tube {
 
 struct Connection
 {

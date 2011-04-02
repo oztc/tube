@@ -8,7 +8,7 @@
 #include "utils/logger.h"
 #include "utils/misc.h"
 
-namespace pipeserv {
+namespace tube {
 namespace utils {
 
 void

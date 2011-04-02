@@ -4,7 +4,7 @@
 #include "http/configuration.h"
 #include "utils/logger.h"
 
-namespace pipeserv {
+namespace tube {
 
 #define HTTP_CONNECTION(ptr) ((HttpConnection*) (ptr))
 

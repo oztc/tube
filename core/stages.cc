@@ -10,9 +10,9 @@
 #include "core/stages.h"
 #include "core/pipeline.h"
 
-using namespace pipeserv::utils;
+using namespace tube::utils;
 
-namespace pipeserv {
+namespace tube {
 
 Stage::Stage(std::string name)
     : pipeline_(Pipeline::instance())

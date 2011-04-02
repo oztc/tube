@@ -4,7 +4,7 @@
 #include "http/http_parser.h"
 #include "utils/misc.h"
 
-namespace pipeserv {
+namespace tube {
 
 // some common http response status defined by the standard
 // copied from http://www.w3.org/Protocols/rfc2616/rfc2616-sec6.html

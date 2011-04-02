@@ -5,7 +5,7 @@
 #include "utils/exception.h"
 #include "utils/logger.h"
 
-namespace pipeserv {
+namespace tube {
 
 ssize_t
 InputStream::read_into_buffer()

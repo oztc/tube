@@ -8,7 +8,7 @@
 #include "core/pipeline.h"
 #include "utils/logger.h"
 
-namespace pipeserv {
+namespace tube {
 
 class HttpConnectionFactory : public ConnectionFactory
 {

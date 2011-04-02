@@ -8,7 +8,7 @@
 #include "utils/misc.h"
 #include "utils/exception.h"
 
-namespace pipeserv {
+namespace tube {
 namespace utils {
 
 void

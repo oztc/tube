@@ -1,6 +1,6 @@
 #include "http/configuration.h"
 
-using namespace pipeserv;
+using namespace tube;
 
 int
 main(int argc, char *argv[])

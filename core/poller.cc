@@ -3,7 +3,7 @@
 #include "config.h"
 #include "core/poller.h"
 
-namespace pipeserv {
+namespace tube {
 
 Poller::Poller() throw()
 {

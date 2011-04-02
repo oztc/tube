@@ -8,7 +8,7 @@
 #include "http/connection.h"
 #include "core/wrapper.h"
 
-namespace pipeserv {
+namespace tube {
 
 class HttpRequest : public Request
 {

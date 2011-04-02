@@ -9,7 +9,7 @@
 
 #include "utils/misc.h"
 
-namespace pipeserv {
+namespace tube {
 
 struct IOCacheEntry
 {

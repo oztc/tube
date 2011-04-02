@@ -10,7 +10,7 @@
 #include "core/pipeline.h"
 #include "core/poller.h"
 
-namespace pipeserv {
+namespace tube {
 
 class Stage
 {

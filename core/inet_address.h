@@ -9,7 +9,7 @@
 #include <arpa/inet.h>
 #include <string>
 
-namespace pipeserv {
+namespace tube {
 
 class InternetAddress
 {

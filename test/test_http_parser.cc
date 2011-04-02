@@ -5,7 +5,7 @@
 #include "http/connection.h"
 #include "utils/logger.h"
 
-using namespace pipeserv;
+using namespace tube;
 
 static const char* protocol_text = "GET / HTTP/1.1\r\nHost: www.test.com\r\n\r\nGET / HTTP/1.1\r\nContent-Length: 13\r\n\r\n1234567890abcGET / HTTP/1.1\r\nHost: www.test.com\r\n\r\n";
 
