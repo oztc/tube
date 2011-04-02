@@ -48,7 +48,7 @@ Buffer::operator=(const Buffer& rhs)
 
 Buffer::CowInfo::CowInfo()
 {
-    extra_page_ = ALLOC_PAGE();
+    extra_page_ = NULL;
 }
 
 Buffer::CowInfo::~CowInfo()
@@ -91,6 +91,10 @@ Buffer::read_from_fd(int fd)
     struct iovec vec[2];
     if (need_copy_for_write())
         copy_for_write();
+
+    if (cow_info_->extra_page_ == NULL) {
+        cow_info_->extra_page_ = ALLOC_PAGE();
+    }
 
     vec[0].iov_base = cow_info_->pages_.back() + kPageSize - right_offset_;
     vec[0].iov_len = right_offset_;
