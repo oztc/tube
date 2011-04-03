@@ -96,6 +96,7 @@ IdleScanner::scan_idle_connection(Poller& poller)
             timeout_connections.push_back(conn);
         }
     }
+    stage_.mutex_.unlock();
     for (size_t i = 0; i < timeout_connections.size(); i++) {
          // timeout: this connection has been idle for a long time.
         Connection* conn = timeout_connections[i];
@@ -104,7 +105,6 @@ IdleScanner::scan_idle_connection(Poller& poller)
     }
 
     last_scan_time_ = current_time;
-    stage_.mutex_.unlock();
 }
 
 int PollInStage::kDefaultTimeout = 10;

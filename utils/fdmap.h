@@ -6,6 +6,7 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <boost/shared_array.hpp>
+#include <cassert>
 
 namespace tube {
 namespace utils {
@@ -51,19 +52,23 @@ public:
     size_t size() const { return items_.size(); }
 
     iterator find(size_t idx) const {
+        assert(idx < max_size_);
         return table_[idx];
     }
 
     bool erase(size_t idx) {
+        assert(idx < max_size_);
         if (table_[idx] == end()) {
             return false;
         } else {
+            items_.erase(table_[idx]);
             table_[idx] = end();
             return true;
         }
     }
 
     bool insert(size_t idx, const T& value) {
+        assert(idx < max_size_);
         if (table_[idx] == end()) {
             table_[idx] = items_.insert(items_.end(), value);
             return true;
