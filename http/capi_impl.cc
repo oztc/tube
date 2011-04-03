@@ -33,9 +33,9 @@ public:
 
 class CHttpHandlerFactoryAdapter : public BaseHttpHandlerFactory
 {
-    tube_http_handler_descriptor_t* desc_;
+    tube_http_handler_desc_t* desc_;
 public:
-    CHttpHandlerFactoryAdapter(tube_http_handler_descriptor_t* desc)
+    CHttpHandlerFactoryAdapter(tube_http_handler_desc_t* desc)
         : desc_(desc) {}
 
     virtual BaseHttpHandler* create() const {
@@ -77,7 +77,7 @@ tube_http_handler_add_option(tube_http_handler_t* handler, const char* name,
 }
 
 EXPORT_API void
-tube_http_handler_descriptor_register(tube_http_handler_descriptor_t* desc)
+tube_http_handler_descriptor_register(tube_http_handler_desc_t* desc)
 {
     tube::BaseHttpHandlerFactory::register_factory(
         new tube::CHttpHandlerFactoryAdapter(desc));

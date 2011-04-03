@@ -70,6 +70,7 @@ main(int argc, char *argv[])
 {
     server.start();
     server.listen(128);
+    server.start_all_threads();
 
     server.main_loop();
     return 0;

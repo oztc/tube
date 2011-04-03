@@ -4,11 +4,11 @@
 #define _POLLER_H_
 
 #include <string>
-#include <google/dense_hash_map>
 #include <map>
 #include <boost/function.hpp>
 
 #include "utils/misc.h"
+#include "utils/fdmap.h"
 
 namespace tube {
 
@@ -26,7 +26,7 @@ class Poller : public utils::Noncopyable
 public:
     typedef boost::function<void (Connection*, PollerEvent)> EventCallback;
     typedef boost::function<void (Poller&)> PollerCallback;
-    typedef google::dense_hash_map<int, Connection*> FDMap;
+    typedef utils::FDMap<Connection*> FDMap;
 
     Poller() throw();
     virtual ~Poller() {}
@@ -36,11 +36,13 @@ public:
     void set_post_handler(const PollerCallback& cb) { post_handler_ = cb; }
 
     size_t size() const { return fds_.size(); }
-    bool has_fd(int fd) const;
-    Connection* find_connection(int fd);
-
+    FDMap::const_iterator begin() const { return fds_.begin(); }
+    FDMap::const_iterator end() const { return fds_.end(); }
     FDMap::iterator begin() { return fds_.begin(); }
     FDMap::iterator end() { return fds_.end(); }
+
+    bool has_fd(int fd) const;
+    Connection* find_connection(int fd);
 
     virtual void handle_event(int timeout) throw() = 0;
     virtual bool poll_add_fd(int fd, Connection* conn, PollerEvent evt) = 0;

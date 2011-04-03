@@ -10,8 +10,8 @@
 #include <set>
 
 #include <map>
-#include <google/dense_hash_map>
 
+#include "utils/fdmap.h"
 #include "utils/misc.h"
 #include "core/stream.h"
 #include "core/inet_address.h"
@@ -71,9 +71,7 @@ class QueueScheduler : public Scheduler
 {
 protected:
     typedef std::list<Connection*> NodeList;
-    typedef google::dense_hash_map<Connection*, NodeList::iterator,
-                                   utils::PtrHashFunc> NodeMap;
-    //typedef std::map<Connection*, NodeList::iterator> NodeMap;
+    typedef utils::FDMap<NodeList::iterator> NodeMap;
 
     NodeList  list_;
     NodeMap   nodes_;

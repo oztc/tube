@@ -88,7 +88,7 @@ IdleScanner::scan_idle_connection(Poller& poller)
     std::vector<Connection*> timeout_connections;
     for (Poller::FDMap::iterator it = poller.begin(); it != poller.end();
          ++it) {
-        Connection* conn =  it->second;
+        Connection* conn =  *it;
         // on most architecture, accessing two words should be atomic.
         if (conn->timeout <= 0)
             continue;

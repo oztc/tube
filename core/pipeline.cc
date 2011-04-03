@@ -116,28 +116,25 @@ Scheduler::~Scheduler()
 QueueScheduler::QueueScheduler(bool suppress_connection_lock)
     : Scheduler(), suppress_connection_lock_(suppress_connection_lock)
 {
-    nodes_.set_empty_key(NULL);
-    nodes_.set_deleted_key((Connection*) 0x08);
 }
 
 void
 QueueScheduler::add_task(Connection* conn)
 {
     utils::Lock lk(mutex_);
-    NodeMap::iterator it = nodes_.find(conn);
+    NodeMap::iterator it = nodes_.find(conn->fd);
     if (it != nodes_.end()) {
         // already in the scheduler, put it on the top
-        NodeList::iterator node = it->second;
-        list_.erase(node);
+        list_.erase(*it);
         list_.push_front(conn);
-        nodes_.erase(it);
-        nodes_.insert(std::make_pair(conn, list_.begin()));
+        nodes_.erase(conn->fd);
+        nodes_.insert(conn->fd, list_.begin());
         return;
     }
     bool need_notify = (list_.size() == 0);
     list_.push_back(conn);
     NodeList::iterator node = list_.end();
-    nodes_.insert(std::make_pair(conn, --node));
+    nodes_.insert(conn->fd, --node);
 
     lk.unlock();
     if (need_notify) {
@@ -186,7 +183,7 @@ QueueScheduler::pick_task_nolock_connection()
     }
     Connection* conn = list_.front();
     list_.pop_front();
-    nodes_.erase(conn);
+    nodes_.erase(conn->fd);
     return conn;
 }
 
@@ -204,7 +201,7 @@ reschedule:
         conn = *it;
         if (conn->trylock()) {
             list_.erase(it);
-            nodes_.erase(conn);
+            nodes_.erase(conn->fd);
             return conn;
         }
     }
@@ -226,20 +223,18 @@ void
 QueueScheduler::remove_task(Connection* conn)
 {
     utils::Lock lk(mutex_);
-    NodeMap::iterator it = nodes_.find(conn);
+    NodeMap::iterator it = nodes_.find(conn->fd);
     if (it == nodes_.end()) {
         return;
     }
-    NodeList::iterator node = it->second;
-    list_.erase(node);
-    nodes_.erase(it);
+    list_.erase(*it);
+    nodes_.erase(conn->fd);
 }
 
 QueueScheduler::~QueueScheduler()
 {
     utils::Lock lk(mutex_);
     list_.clear();
-    nodes_.clear();
 }
 
 Connection*

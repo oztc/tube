@@ -7,31 +7,29 @@ namespace tube {
 
 Poller::Poller() throw()
 {
-    fds_.set_empty_key(-INT_MAX);
-    fds_.set_deleted_key(INT_MAX);
 }
 
 bool
 Poller::has_fd(int fd) const
 {
-    if (fds_.find(fd) == fds_.end())
-        return false;
-    return true;
+    return (fds_.find(fd) != fds_.end());
 }
 
 Connection*
 Poller::find_connection(int fd)
 {
     FDMap::iterator it = fds_.find(fd);
-    if (it == fds_.end())
+    if (it == fds_.end()) {
         return NULL;
-    return it->second;
+    } else {
+        return *it;
+    }
 }
 
 bool
 Poller::add_fd_set(int fd, Connection* conn)
 {
-    return fds_.insert(std::make_pair(fd, conn)).second;
+    return fds_.insert(fd, conn);
 }
 
 bool
