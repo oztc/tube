@@ -83,6 +83,14 @@ private:
     PollerMap poller_map_;
 };
 
+#define EXPORT_POLLER_IMPL(name, klass)                                 \
+    static Poller* name##_create() { return new klass(); }              \
+    static void __##name##_construction() __attribute__((constructor)); \
+    static void __##name##_construction() {                             \
+        PollerFactory::instance().register_poller(#name, name##_create); \
+    }                                                                   \
+
+
 }
 
 #endif /* _POLLER_H_ */

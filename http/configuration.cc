@@ -29,7 +29,7 @@ HandlerConfig::load_handler(const Node& subdoc)
         it.second() >> value;
         if (key == "name" || key == "module")
             continue;
-        handler->add_option(key, it.second());
+        handler->add_option(key, value);
     }
     handler->load_param();
 }

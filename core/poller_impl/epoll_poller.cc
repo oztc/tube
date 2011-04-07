@@ -31,7 +31,7 @@ public:
 EpollPoller::EpollPoller() throw()
     : Poller()
 {
-    epoll_fd_ = epoll_create(INT_MAX); // should ignore
+    epoll_fd_ = ::epoll_create(INT_MAX); // should ignore
     if (epoll_fd_ < 0) {
         throw utils::SyscallException();
     }
@@ -39,7 +39,7 @@ EpollPoller::EpollPoller() throw()
 
 EpollPoller::~EpollPoller()
 {
-    close(epoll_fd_);
+    ::close(epoll_fd_);
 }
 
 static int
@@ -126,18 +126,6 @@ EpollPoller::handle_event(int timeout) throw()
     free(epoll_evt);
 }
 
-struct EpollPollerRegister
-{
-    EpollPollerRegister() {
-        PollerFactory::instance().register_poller(
-            "epoll", boost::bind(&EpollPollerRegister::create_poller, this));
-    }
-
-    Poller* create_poller() const {
-        return new EpollPoller();
-    }
-};
-
-static EpollPollerRegister __epoll_poller_register;
+EXPORT_POLLER_IMPL(epoll, EpollPoller);
 
 }

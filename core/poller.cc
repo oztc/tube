@@ -95,12 +95,12 @@ PollerFactory::default_poller_name() const
 {
 #ifdef USE_EPOLL
     return std::string("epoll");
-#else
+#endif
 #ifdef USE_KQUEUE
     return std::string("kqueue");
-#else
-#error "Not ported to this platform"
 #endif
+#ifdef USE_PORT_COMPLETION
+    return std::string("port_completion");
 #endif
 }
 

@@ -4,7 +4,15 @@
 #include <stdint.h>
 #include <sys/types.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+#define BEGIN_DECLS extern "C" {
+#define END_DECLS }
+#else
+#define BEGIN_DECLS
+#define END_DECLS
+#endif
+
+BEGIN_DECLS
 
 // only for LP/LLP64 model
 typedef unsigned char          u8;
@@ -105,6 +113,6 @@ void         tube_http_response_close(tube_http_response_t* response);
 void         tube_http_response_respond(tube_http_response_t* response,
                                         int status_code,
                                         const char* reason);
-__END_DECLS
+END_DECLS
 
 #endif /* _CAPI_H_ */

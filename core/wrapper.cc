@@ -107,7 +107,6 @@ Response::flush_data()
 {
     OutputStream& out = conn_->out_stream;
     ssize_t nwrite = 0;
-    disable_poll();
     utils::set_socket_blocking(conn_->fd, true);
     while (true) {
         ssize_t rs = out.write_into_output();
@@ -120,7 +119,6 @@ Response::flush_data()
         nwrite += rs;
     }
     utils::set_socket_blocking(conn_->fd, false);
-    enable_poll();
     return nwrite;
 }
 

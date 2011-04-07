@@ -35,20 +35,24 @@ Connection::active_close()
 void
 Connection::set_cork()
 {
+#ifdef __linux__
     int state = 1;
     if (setsockopt(fd, IPPROTO_TCP, TCP_CORK, &state, sizeof(state)) < 0) {
         LOG(WARNING, "Cannot set TCP_CORK on fd %d", fd);
     }
+#endif
 }
 
 void
 Connection::clear_cork()
 {
+#ifdef __linux__
     int state = 0;
     if (setsockopt(fd, IPPROTO_TCP, TCP_CORK, &state, sizeof(state)) < 0) {
         LOG(WARNING, "Cannot clear TCP_CORK on fd %d", fd);
     }
     ::fsync(fd);
+#endif
 }
 
 void

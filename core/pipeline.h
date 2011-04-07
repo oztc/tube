@@ -23,6 +23,12 @@ struct Connection
     volatile uint32_t last_active;
     volatile uint32_t timeout;
 
+    // poller specific data, might not be used
+    union {
+        int   data_int;
+        void* data_ptr;
+    } poller_spec;
+
     int       fd;
     int       prio;
     bool      inactive;

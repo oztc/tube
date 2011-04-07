@@ -132,18 +132,6 @@ KqueuePoller::handle_event(int timeout) throw ()
     free(kevents);
 }
 
-struct KqueuePollerRegister
-{
-    KqueuePollerRegister() {
-        PollerFactory::instance().register_poller(
-            "kqueue", boost::bind(&KqueuePollerRegister::create_poller, this));
-    }
-
-    Poller* create_poller() const {
-        return new KqueuePoller();
-    }
-};
-
-static KqueuePollerRegister __kqueue_poller_register;
+EXPORT_POLLER_IMPL(kqueue, KqueuePoller);
 
 }
