@@ -24,9 +24,9 @@ public:
     size_t max_address_length() const { return sizeof(addr_); }
     unsigned short family() const { return get_address()->sa_family; }
     sockaddr* get_address() const { return (sockaddr*) &addr_; }
-    socklen_t address_length() const throw();
+    socklen_t address_length() const ;
     unsigned short port() const;
-    std::string address_string() const throw();
+    std::string address_string() const ;
 };
 
 }

@@ -52,7 +52,7 @@ struct StdLogWriter : public LogWriter
 
 struct FileLogWriter : public LogWriter
 {
-    FileLogWriter(const char* filename) throw();
+    FileLogWriter(const char* filename) ;
     virtual ~FileLogWriter();
 
     virtual void write_log(const char* str);

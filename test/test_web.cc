@@ -4,6 +4,7 @@
 #include "http/http_wrapper.h"
 #include "http/configuration.h"
 #include "http/http_stages.h"
+#include "http/module.h"
 
 #include "core/server.h"
 #include "core/stages.h"
@@ -48,15 +49,11 @@ public:
     }
 };
 
-// instanlized the factories
-
-static StaticHttpHandlerFactory static_handler_factory;
-
 int
 main(int argc, char *argv[])
 {
+    tube_module_initialize_all();
     ServerConfig& cfg = ServerConfig::instance();
-    BaseHttpHandlerFactory::register_factory(&static_handler_factory);
 
     cfg.load_config_file("./test/test-conf.yaml");
     WebServer server(cfg.address().c_str(), cfg.port().c_str());

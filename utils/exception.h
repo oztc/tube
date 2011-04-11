@@ -17,7 +17,7 @@ class SyscallException : public std::exception
 public:
     SyscallException() : err_(errno) {}
 
-    virtual const char* what() const throw() {
+    virtual const char* what() const throw()  {
         return strerror(err_);
     }
 };

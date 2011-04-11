@@ -3,14 +3,7 @@
 
 #include <stdint.h>
 #include <sys/types.h>
-
-#ifdef __cplusplus
-#define BEGIN_DECLS extern "C" {
-#define END_DECLS }
-#else
-#define BEGIN_DECLS
-#define END_DECLS
-#endif
+#include "utils/cdecl.h"
 
 BEGIN_DECLS
 
@@ -46,13 +39,11 @@ struct _tube_http_handler_desc_t {
     const char* vender_name;
 };
 
-#define MAX_OPTION_LEN 128
-#define MAX_HEADER_VALUE_LEN 128
-
 const char*  tube_http_handler_get_name(tube_http_handler_t* handler);
-void         tube_http_handler_option(tube_http_handler_t* handler,
-                                      const char* name,
-                                      char* value);
+
+/* needs to be freed after use */
+char*        tube_http_handler_option(tube_http_handler_t* handler,
+                                      const char* name);
 void         tube_http_handler_add_option(tube_http_handler_t* handler,
                                           const char* name,
                                           const char* value);
@@ -79,9 +70,10 @@ const char*  tube_http_request_find_header_value(tube_http_request_t* request,
 int          tube_http_request_has_header(tube_http_request_t* request,
                                           const char* key);
 
-size_t       tube_http_request_find_header_values(
-    tube_http_request_t* request, const char* key,
-    char res[][MAX_HEADER_VALUE_LEN], size_t max_value_num);
+/* needs to be freed after use */
+char**       tube_http_request_find_header_values(tube_http_request_t* request,
+                                                  const char* key,
+                                                  size_t* size);
 
 ssize_t      tube_http_request_read_data(tube_http_request_t* request,
                                          void* ptr, size_t size);

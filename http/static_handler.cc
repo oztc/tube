@@ -6,6 +6,7 @@
 
 #include "http/static_handler.h"
 #include "utils/logger.h"
+#include "module.h"
 
 namespace tube {
 
@@ -514,5 +515,24 @@ StaticHttpHandler::handle_request(HttpRequest& request, HttpResponse& response)
                       request, response);
     }
 }
+
+static void
+static_handler_module_init()
+{
+    static StaticHttpHandlerFactory static_handler_factory;
+    BaseHttpHandlerFactory::register_factory(&static_handler_factory);
+}
+
+static struct StaticHandlerModule : public Module
+{
+    StaticHandlerModule() {
+        this->on_initialize = static_handler_module_init;
+        this->name = "static_handler";
+        this->vendor = "tube server";
+        this->description = "static file handler";
+    }
+} static_handler_module;
+
+EXPORT_MODULE_STATIC(static_handler_module);
 
 }

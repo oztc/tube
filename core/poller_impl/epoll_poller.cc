@@ -20,15 +20,15 @@ class EpollPoller : public Poller
 {
     int epoll_fd_;
 public:
-    EpollPoller() throw();
+    EpollPoller() ;
     virtual ~EpollPoller();
 
-    virtual void handle_event(int timeout) throw();
+    virtual void handle_event(int timeout) ;
     virtual bool poll_add_fd(int fd, Connection* conn, PollerEvent evt);
     virtual bool poll_remove_fd(int fd);
 };
 
-EpollPoller::EpollPoller() throw()
+EpollPoller::EpollPoller() 
     : Poller()
 {
     epoll_fd_ = ::epoll_create(INT_MAX); // should ignore
@@ -96,7 +96,7 @@ EpollPoller::poll_remove_fd(int fd)
 #define MAX_EVENT_PER_POLL 4096
 
 void
-EpollPoller::handle_event(int timeout) throw()
+EpollPoller::handle_event(int timeout) 
 {
     struct epoll_event* epoll_evt = (struct epoll_event*)
         malloc(sizeof(struct epoll_event) * MAX_EVENT_PER_POLL);

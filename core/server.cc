@@ -37,7 +37,7 @@ lookup_addr(const char* host, const char* service)
     return info;
 }
 
-Server::Server(const char* host, const char* service) throw()
+Server::Server(const char* host, const char* service) 
     : read_stage_pool_size_(kDefaultReadStagePoolSize),
       write_stage_pool_size_(kDefaultWriteStagePoolSize)
 {

@@ -5,7 +5,7 @@
 
 namespace tube {
 
-Poller::Poller() throw()
+Poller::Poller() 
 {
 }
 

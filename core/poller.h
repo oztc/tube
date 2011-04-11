@@ -28,7 +28,7 @@ public:
     typedef boost::function<void (Poller&)> PollerCallback;
     typedef utils::FDMap<Connection*> FDMap;
 
-    Poller() throw();
+    Poller() ;
     virtual ~Poller() {}
 
     void set_event_handler(const EventCallback& cb) { handler_ = cb; }
@@ -44,7 +44,7 @@ public:
     bool has_fd(int fd) const;
     Connection* find_connection(int fd);
 
-    virtual void handle_event(int timeout) throw() = 0;
+    virtual void handle_event(int timeout)  = 0;
     virtual bool poll_add_fd(int fd, Connection* conn, PollerEvent evt) = 0;
     virtual bool poll_remove_fd(int fd) = 0;
 

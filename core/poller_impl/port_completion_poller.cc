@@ -37,15 +37,15 @@ class PortPoller : public Poller
     utils::Mutex            mutex_;
     std::queue<PendingOps>  pending_;
 public:
-    PortPoller() throw();
+    PortPoller() ;
     virtual ~PortPoller();
 
-    virtual void handle_event(int timeout) throw();
+    virtual void handle_event(int timeout) ;
     virtual bool poll_add_fd(int fd, Connection* conn, PollerEvent evt);
     virtual bool poll_remove_fd(int fd);
 };
 
-PortPoller::PortPoller() throw()
+PortPoller::PortPoller() 
     : Poller()
 {
     port_ = ::port_create();
@@ -108,7 +108,7 @@ PortPoller::poll_remove_fd(int fd)
 #define MAX_EVENT_PER_GET 1024
 
 void
-PortPoller::handle_event(int timeout) throw()
+PortPoller::handle_event(int timeout) 
 {
     port_event_t* port_evt = (port_event_t*)
         malloc(sizeof(port_event_t) * MAX_EVENT_PER_GET);

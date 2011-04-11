@@ -1,7 +1,4 @@
 # -*- mode: python -*-
-
-import platform
-import os
 from SCons import SConf
 
 source = ['utils/logger.cc',
@@ -24,57 +21,35 @@ http_source = ['http/http_parser.c',
                'http/configuration.cc',
                'http/io_cache.cc',
                'http/http_stages.cc',
-               'http/capi_impl.cc']
+               'http/capi_impl.cc',
+               'http/module.c']
+
+http_server_source = ['http/server.cc']
 
 epoll_source = ['core/poller_impl/epoll_poller.cc']
 kqueue_source = ['core/poller_impl/kqueue_poller.cc']
 port_completion_source = ['core/poller_impl/port_completion_poller.cc']
 
-essential_cflags = ' -pipe -Wall'
-cflags = '-g -DLOG_ENABLED'
-inc_path = ['.', '/usr/local/include']
-libflags = ['pthread']
-
-if ARGUMENTS.get('release', 0) == '1':
-    cflags = '-Os -mtune=generic'
-
-def PassEnv(name, dstname):
-    if name in os.environ:
-        env[dstname] = os.environ[name]
-
-def GetOS():
-    return platform.uname()[0]
-
-def CompilerMTOption():
-    if GetOS() == 'Linux' or os == 'FreeBSD':
-        return ' -pthread'
-    elif GetOS() == 'SunOS':
-        return ' -pthreads'
-    else:
-        return ''
-
-env = Environment(ENV=os.environ, CFLAGS=cflags, CXXFLAGS=cflags,
-                  CPPPATH=inc_path, LIBS=libflags)
-
-PassEnv('CFLAGS', 'CFLAGS')
-PassEnv('CXXFLAGS', 'CXXFLAGS')
-PassEnv('LDFLAGS', 'LINKFLAGS')
-
-env.Append(CFLAGS=essential_cflags + CompilerMTOption(), CXXFLAGS=essential_cflags + CompilerMTOption())
+Import('env', 'GetOS')
 
 def LinuxSpecificConf(ctx):
+    global source
     conf = ctx.sconf
     if not SConf.CheckCHeader(ctx, 'sys/epoll.h'):
         ctx.Message('Failed because kernel doesn\'t suport epoll')
         return False
     if SConf.CheckCHeader(ctx, 'sys/sendfile.h'):
         conf.Define('USE_LINUX_SENDFILE')
+    if not SConf.CheckLib(ctx, 'dl'):
+        ctx.Message('Cannot find dl')
+        return False
     conf.Define('USE_EPOLL')
     source += epoll_source
     ctx.Result(0)
     return True
 
 def FreeBSDSpecificConf(ctx):
+    global source
     conf = ctx.sconf
     if not SConf.CheckCHeader(ctx, ['sys/types.h', 'sys/event.h']):
         ctx.Message('Failed because kernel doesn\'t support kqueue')
@@ -86,6 +61,7 @@ def FreeBSDSpecificConf(ctx):
     return True
 
 def SolarisSpecificConf(ctx):
+    global source
     conf = ctx.sconf
     if not SConf.CheckLib(ctx, 'socket'):
         ctx.Message('Socket library not found')
@@ -128,7 +104,8 @@ if not env.GetOption('clean'):
 
 env.Command('http/http_parser.c', 'http/http_parser.rl', 'ragel -s -G2 $SOURCE -o $TARGET')
 libtube = env.SharedLibrary('tube', source=source)
-libtube_web = env.SharedLibrary('tube_web', source=http_source)
+libtube_web = env.SharedLibrary('tube-web', source=http_source)
+tube_server = env.Program('tube-server', source=http_server_source, LINKFLAGS=env['LINKFLAGS'] + ' -Lbuild', LIBS=['tube', 'tube-web'])
 
 def GenTestProg(name, src):
     ldflags = [libtube, libtube_web]
@@ -143,3 +120,9 @@ GenTestProg('test/file_server', 'test/file_server.cc')
 GenTestProg('test/test_http_parser', 'test/test_http_parser.cc')
 GenTestProg('test/test_config', 'test/test_config.cc')
 GenTestProg('test/test_web', 'test/test_web.cc')
+
+# Install
+env.Alias('install', [
+        env.Install('$LIBDIR/', [libtube, libtube_web]),
+        env.Install('$PREFIX/bin/', tube_server)
+        ])

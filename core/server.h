@@ -25,7 +25,7 @@ public:
     static const size_t kDefaultReadStagePoolSize;
     static const size_t kDefaultWriteStagePoolSize;
 public:
-    Server(const char* host, const char* service) throw();
+    Server(const char* host, const char* service) ;
     virtual ~Server();
 
     int fd() const { return fd_; }

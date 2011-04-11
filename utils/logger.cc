@@ -17,7 +17,7 @@ StdLogWriter::write_log(const char* str)
     fprintf(stderr, "%s\n", str);
 }
 
-FileLogWriter::FileLogWriter(const char* filename) throw()
+FileLogWriter::FileLogWriter(const char* filename) 
 {
     fp_ = fopen(filename, "a+");
     if (fp_ == NULL)

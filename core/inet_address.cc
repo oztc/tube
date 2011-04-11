@@ -11,7 +11,7 @@ InternetAddress::InternetAddress()
 }
 
 socklen_t
-InternetAddress::address_length() const throw()
+InternetAddress::address_length() const 
 {
     switch (family()) {
     case AF_INET:
@@ -24,7 +24,7 @@ InternetAddress::address_length() const throw()
 }
 
 std::string
-InternetAddress::address_string() const throw()
+InternetAddress::address_string() const 
 {
     char pstr[INET6_ADDRSTRLEN];
     const char* result = NULL;

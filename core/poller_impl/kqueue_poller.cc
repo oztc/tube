@@ -22,15 +22,15 @@ class KqueuePoller : public Poller
 {
     int kqueue_;
 public:
-    KqueuePoller() throw();
+    KqueuePoller() ;
     virtual ~KqueuePoller();
 
-    virtual void handle_event(int timeout) throw();
+    virtual void handle_event(int timeout) ;
     virtual bool add_fd(int fd, Connection* conn, PollerEvent evt);
     virtual bool remove_fd(int fd);
 };
 
-KqueuePoller::KqueuePoller() throw()
+KqueuePoller::KqueuePoller() 
 {
     kqueue_ = kqueue();
     if (kqueue_ < 0) {

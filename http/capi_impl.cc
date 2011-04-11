@@ -1,5 +1,7 @@
 #include "pch.h"
 
+#include <string.h>
+
 #include "http/capi.h"
 #include "http/interface.h"
 #include "http/configuration.h"
@@ -55,18 +57,20 @@ public:
 
 #define EXPORT_API extern "C"
 
+#define MAX_OPTION_LEN 128
+#define MAX_HEADER_VALUE_LEN 128
+
 EXPORT_API const char*
 tube_http_handler_get_name(tube_http_handler_t* handler)
 {
     return HANDLER_IMPL(handler->handle)->name().c_str();
 }
 
-EXPORT_API void
-tube_http_handler_option(tube_http_handler_t* handler, const char* name,
-                         char* value)
+EXPORT_API char*
+tube_http_handler_option(tube_http_handler_t* handler, const char* name)
 {
     std::string str = HANDLER_IMPL(handler->handle)->option(name);
-    strncpy(value, str.c_str(), MAX_OPTION_LEN);
+    return strndup(str.c_str(), MAX_OPTION_LEN);
 }
 
 EXPORT_API void
@@ -132,21 +136,18 @@ tube_http_request_has_header(tube_http_request_t* request, const char* key)
     return tube_http_request_find_header_value(request, key) != NULL;
 }
 
-
-EXPORT_API size_t
+EXPORT_API char**
 tube_http_request_find_header_values(tube_http_request_t* request,
-                                     const char* key,
-                                     char res[][MAX_HEADER_VALUE_LEN],
-                                     size_t max_value_num)
+                                     const char* key, size_t* size)
 {
     std::vector<std::string> values =
         HTTP_REQUEST(request)->find_header_values(key);
-    size_t i;
-    for (i = 0; i < max_value_num && i < values.size(); i++) {
-        memset(res[i], 0, MAX_HEADER_VALUE_LEN);
-        strncpy(res[i], values[i].c_str(), MAX_HEADER_VALUE_LEN);
+    char** array = (char**) malloc(sizeof(char*) * values.size());
+    for (size_t i = 0; i < values.size(); i++) {
+        array[i] = strndup(values[i].c_str(), MAX_HEADER_VALUE_LEN);
     }
-    return i;
+    *size = values.size();
+    return array;
 }
 
 EXPORT_API ssize_t
