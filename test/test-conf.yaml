@@ -7,6 +7,8 @@ listen_queue_size: 32
 
 recycle_threshold: 16
 
+idle_timeout: 15
+
 handlers:
   - name: default
     module: static

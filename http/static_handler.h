@@ -19,7 +19,8 @@ class StaticHttpHandler : public BaseHttpHandler
     std::string index_page_css_;
     bool        allow_index_;
 
-    IOCache io_cache_;
+    IOCache     io_cache_;
+    std::string charset_;
 public:
     static std::string remove_path_dots(const std::string& path);
 

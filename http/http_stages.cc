@@ -10,17 +10,14 @@
 
 namespace tube {
 
-class HttpConnectionFactory : public ConnectionFactory
-{
-public:
-    virtual Connection* create_connection(int fd);
-    virtual void        destroy_connection(Connection* conn);
-};
+int HttpConnectionFactory::kDefaultTimeout = 0;
 
 Connection*
 HttpConnectionFactory::create_connection(int fd)
 {
-    return new HttpConnection(fd);
+    Connection* conn = new HttpConnection(fd);
+    conn->set_timeout(kDefaultTimeout);
+    return conn;
 }
 
 void

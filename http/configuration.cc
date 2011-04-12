@@ -3,6 +3,7 @@
 #include <boost/xpressive/xpressive.hpp>
 
 #include "http/configuration.h"
+#include "http/http_stages.h"
 #include "utils/logger.h"
 
 namespace tube {
@@ -202,10 +203,20 @@ VHostConfig::load_vhost_rules(const Node& subdoc)
     host_map_.insert(std::make_pair(host, url_config));
 }
 
+static std::string
+parse_host(const std::string& host)
+{
+    size_t pos = host.find(':');
+    if (pos != std::string::npos) {
+        return host.substr(pos);
+    }
+    return host;
+}
+
 const UrlRuleItem*
 VHostConfig::match_uri(const std::string& host, HttpRequestData& req_ref) const
 {
-    HostMap::const_iterator it = host_map_.find(host);
+    HostMap::const_iterator it = host_map_.find(parse_host(host));
     if (it == host_map_.end()) {
         it = host_map_.find("default");
     }
@@ -256,6 +267,9 @@ ServerConfig::load_config_file(const char* filename)
             } else if (key == "listen_queue_size") {
                 it.second() >> value;
                 listen_queue_size_ = atoi(value.c_str());
+            } else if (key == "idle_timeout") {
+                it.second() >> value;
+                HttpConnectionFactory::kDefaultTimeout = atoi(value.c_str());
             }
             LOG(INFO, "ignore unsupported key %s", key.c_str());
         }

@@ -3,6 +3,9 @@
 #include <sstream>
 #include <dirent.h>
 #include <sys/types.h>
+#include <cstdlib>
+#include <locale.h>
+#include <langinfo.h>
 
 #include "http/static_handler.h"
 #include "utils/logger.h"
@@ -40,6 +43,8 @@ StaticHttpHandler::remove_path_dots(const std::string& path)
 
 StaticHttpHandler::StaticHttpHandler()
 {
+    setlocale(LC_CTYPE, "");
+    charset_ = nl_langinfo(CODESET);
     // setting up the default configuration parameters
     add_option("doc_root", "/var/www");
     add_option("error_root", "");
@@ -402,8 +407,10 @@ StaticHttpHandler::respond_directory_list(const std::string& path,
         return;
     }
     std::stringstream ss;
-    ss << "<html><head><title>Directory List " << href_path << "</title>"
-       << std::endl;
+    ss << "<html><head>"
+       << "<meta http-equiv=\"Content-Type\" content=\"text/html; charset="
+       << charset_ << "\">"
+       <<"<title>Directory List " << href_path << "</title>" << std::endl;
     if (index_page_css_ != "") {
         ss << "<link rel=\"stylesheet\" type=\"text/css\" href=\""
            << index_page_css_ << "\"/>" << std::endl;

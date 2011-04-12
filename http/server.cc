@@ -142,6 +142,9 @@ main(int argc, char* argv[])
     } catch (utils::SyscallException ex) {
         fprintf(stderr, "Cannot start server: %s\n", ex.what());
         exit(-1);
+    } catch (const std::invalid_argument& ex) {
+        fprintf(stderr, "Invalid argument: %s\n", ex.what());
+        exit(-1);
     }
 
     return 0;

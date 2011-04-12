@@ -8,6 +8,14 @@
 
 namespace tube {
 
+class HttpConnectionFactory : public ConnectionFactory
+{
+public:
+    static int kDefaultTimeout;
+    virtual Connection* create_connection(int fd);
+    virtual void        destroy_connection(Connection* conn);
+};
+
 class HttpParserStage : public ParserStage
 {
     Stage* handler_stage_;
